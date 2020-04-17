@@ -1,24 +1,11 @@
 library(tidyverse)
 library(mvtnorm)
 
-# my notation is different from the one in your blog post btw :D 
+# my notation is different from the one in James's blog post btw :D 
 
 # Questions ---------------------------------------------------------------
 
-# Question 1
-# there is some redundant coding in generate_rmeta I think but I am not sure it is redundant
-# any comments on making generate_rmeta more efficient?
-# in pusto lab code you have: 
-# delta_m = rnorm(m, mean = X %*% beta, sd = tau) # one true delta per study? 
-# we have within study variance in the covariates
-# In my code below I am doing different per effect size. I am confused! :D 
-
-# Question 2
-# I added an intercept column to design matrix? 
-# I need help with the coefficient stuff
-
-# Question 3
-# Do we care about adding omega since Tipton Pusto did correlated effects I think?
+# is the v_j and u_ij stuff okay?
 
 
 # Generate one study  -----------------------------------------------------
