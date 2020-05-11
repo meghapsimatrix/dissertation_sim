@@ -3,10 +3,6 @@ library(mvtnorm)
 
 # my notation is different from the one in James's blog post btw :D 
 
-# Questions ---------------------------------------------------------------
-
-# is the v_j and u_ij stuff okay?
-
 
 # Generate one study  -----------------------------------------------------
 
