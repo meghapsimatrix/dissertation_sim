@@ -53,7 +53,7 @@ generate_rsmd(delta = 0, k = 3, N = 20, Psi = 0.7)
 # tau is the variance of the deltas
 # k_mean is the mean number of effect sizes per study.
 # N_mean is the mean number of participants?
-# rho is theaverage correlation between pairs of effect sizes within a study
+# rho is the average correlation between pairs of effect sizes within a study
 # nu and rho control variability of r_k across studies smaller nu more variable correlations
 # covs is the design matrix
 # beta is regression coefficients for X (do I need to make an intercept?)
@@ -78,7 +78,9 @@ generate_es_num <- function(dat) {
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 
-generate_rmeta <- function(m, tau, omega, k_mean, N_mean, rho, nu, covs, beta ) {
+generate_rmeta <- function(m, tau, omega, k_mean, N_mean, 
+                           rho, nu, covs, beta,
+                           return_study_params = FALSE) {
   
   # Design matrix -----------------------------------------------------------
   
@@ -115,11 +117,11 @@ generate_rmeta <- function(m, tau, omega, k_mean, N_mean, rho, nu, covs, beta ) 
   
   # v_j and u_ij terms
   v_j <- rnorm(m, 0, tau)  
-  study_id <- rep(1:m, each = 10)
-  vj_long <- v_j[study_id]
+  study_id <- design_mat_all$study
+  v_j_long <- v_j[study_id]
   u_ij <- rnorm(m * 10, 0, omega)
   
-  true_delta <- tibble(delta = as.vector(X %*% beta) + v_j + u_ij, # is this right??
+  true_delta <- tibble(delta = as.vector(X %*% beta) + v_j_long + u_ij, # is this right??
                        study = study_id) %>%
     group_by(study) %>% 
     summarize(delta = list(delta)) %>% # unnest does mini tibbles so I did this to get vector
@@ -129,6 +131,8 @@ generate_rmeta <- function(m, tau, omega, k_mean, N_mean, rho, nu, covs, beta ) 
   study_data <- study_data %>%
     left_join(true_delta, by = "study") %>%
     select(-study)
+
+  if (return_study_params) return(study_data)
   
   # Generate fulll meta data  -----------------------------------------------
   
@@ -163,3 +167,69 @@ check <- meta_data %>%
   group_by(study) %>%
   summarize(n = n())
 
+#-----------------------------------------
+# Use return_study_params to get 
+# distribution of study design features
+#-----------------------------------------
+
+study_features <- 
+  generate_rmeta(m = 1000, 
+                 tau = 0.05, 
+                 omega = 0.07,
+                 k_mean = 5, 
+                 N_mean = 40, 
+                 rho = 0.6, 
+                 nu = 39,
+                 covs = design_mat,
+                 beta = matrix(c(0.3, rep(0,5)), nrow = 6),
+                 return_study_params = TRUE)
+
+# check means of k, N, Psi
+
+hist(study_features$k)
+hist(study_features$N)
+hist(study_features$Psi)
+
+sd(study_features$Psi) # Should be sqrt(rho (1 - rho) / nu)
+sqrt(0.6 * 0.4 / 1000)
+
+
+
+# check distribution of delta
+
+delta_data <- 
+  study_features %>%
+  mutate(study = 1:n()) %>%
+  unnest(cols = delta)
+
+library(lme4)
+lmer(delta ~ (1 | study), data = delta_data)
+# Estimated SDs should be very close to tau and omega
+
+
+
+#-------------------------------------------------
+# Check whether true parameters can be recovered
+#-------------------------------------------------
+library(clubSandwich)
+library(metafor)
+
+# Set nu = 4000 so that all Psi = rho
+
+meta_data <- 
+  generate_rmeta(m = 1000, 
+                 tau = 0.05, 
+                 omega = 0.07,
+                 k_mean = 5, 
+                 N_mean = 40, 
+                 rho = 0.6, 
+                 nu = 4000,
+                 covs = design_mat,
+                 beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6))
+
+# Use clubSandwich::impute_covariance_matrix with true rho.
+V_mat <- impute_covariance_matrix(vi = meta_data$v, 
+                                  cluster = meta_data$study, 
+                                  r = 0.6)
+
+# Fit rma.mv model. Estimates should be close to true parameters.

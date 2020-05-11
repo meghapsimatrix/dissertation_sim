@@ -1,0 +1,270 @@
+Codebook Supplement 1.csv:
+EffectsizeID� unique identifier for every effect size.
+
+StudyID� unique identifier for every study.
+
+Name_year� author names and year.
+
+Article_num� unique identifier for every publication.
+
+Items�were coded as a factor with (1) Paintings including mostly impressionistic paintings of different artists coded as 0, (2) Naturalistic photographs such as pictures of birds, butterflies coded as 3, (3) Artificial pictures, that is, pictures of artificial objects or creatures coded as 1, (4) Mathematical tasks, such as calculating the volume of geometric solids or the use of significance tests coded as 2, (5) Expository Texts, which included plain expository texts and combinations of texts and other media in a multimedia/interactive media environment coded as 5, (6) Words, such as names that belonged to different conceptual categories, pronunciation rules, or translations in different languages coded as 4, (7) Tastes such as liquids with different tastes coded as 6.
+
+g� Hedges� g.
+
+vg� variance of g.
+
+
+Grey_Lit� journal articles and conference papers are coded as 0 and theses and dissertations as 1.
+
+Design� within-participants design are coded as1 nd between-participants design are coded as 0.
+
+Students� samples including only students are coded as 1 and all other as 0.
+
+Retention_Interval� short (< 20 min) retention intervals are coded as 0 and al longer as 1.
+
+Intentionality�intentional learning designs are coded as 0, incidental learning designs are coded as 1.
+
+Transfer_Retention� transfer tests are coded as T1and retention tests are coded as 0.
+
+Simultaneity� designs using simultaneous presentation are coded as 1, designs using successive presentation are coded as 0.
+
+ZMean_within� standardized ratings of similarity within categories.
+
+ZMean_between� standardized ratings of similarity between categories.
+
+ZMean_complex� standardized ratings of complexity.
+
+ZMean_fam� standardized ratings of familiarity.
+
+ZMean_cur� standardized ratings of curiosity.
+
+Age� mean age of participants.
+
+Spaced� designs with spaced items (10 or 30 sec time intervals) are coded as spaced, designs with immediate succession of items (less than 2 sec) are coded as notspaced, designs with distractors between presentation of items are coded as distract and items not included in the analysis of spacing between items are coded as -1.
+
+Regression_Analysis� studies included in Model 1, Model 2 and Model 3 are coded as 0 otherwise as 1.
+
+Regression_Analysis_With_Outlier� studies included in the Outlier Model are coded as 0 otherwise as 1.
+
+Regression_Analysis_IndependentStudies� studies used in independent studies analysis are coded as 0 otherwise as 1.
+
+Regression_Analysis_Students� studies used in pure students samples only analysis are coded as 0 otherwise as 1.
+
+Regression_Analysis_Visual� studies used in analysis of visual items only are coded as 0 otherwise 1.
+
+Regression_Analysis_Artifical� studies used in analysis of artificial created items only are coded as 0 otherwise 1.
+
+Regression_Analysis_RetentionInterval� studies used in analysis of retention interval are coded as 0 otherwise 1.
+
+Regression_Analysis_Simultaneity� studies used in the specific analysis of simultaneous vs. successive presentation are coded as 0 otherwise as 1. 
+
+Regression_Analysis_Age� studies used in the analysis of mean age are coded as 0 otherwise as 1. 
+
+Regression_Analysis_Spacing� studies used in the analysis of spacing between items are coded as 0 otherwise as 1.
+
+Regression_Analysis_TransferRetention� studies used in the specific analysis of transfer tests vs. retention tests are coded as 0 otherwise as 1.
+
+
+Code:
+library(metafor)
+
+ #Outlier_Analysis
+  out <- rma.mv(g, vg, mods = ~ + Grey_Lit + Design + Students + Age +Retention_Interval + Intentionality + Transfer_Retention + Simultaneity + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num), random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_With_Outlier =="0"),tdist=TRUE, data=Supplement)
+  summary(out, digits=3)
+  inf <- influence(out)
+  plot(inf, plotdfb = TRUE)
+  #Table 2 and Forestplots
+  #Overall
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), data=Supplement)
+  summary(res, digits=3)
+  
+  Table 2 & Forest Plots
+  
+#Paintings
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="0"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 73))
+#Naturalistic photographs
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="3"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 22))
+#Artificial pictures
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="1"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 66))
+#Expository texts
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="5"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 28))
+#Mathematical tasks
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="2"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 48))
+#Words
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="4"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 16))
+#Tastes
+  res <- rma.mv(g, vg, random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Items_num =="6"),  slab=paste(Name_year, Sample_Num, sep=", "), data=Supplement)
+  summary(res, digits=3)
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 6))
+
+
+
+# Effect of Interleaving. P.12
+# Independent Studies  
+res <- rma(g, vg, subset = (Regression_Analysis_IndependentStudies =="0"), data=Supplement)
+  summary(res, digits=3)
+  #All Studies without nested structure
+  res <- rma(g, vg, data=Supplement)
+  summary(res, digits=3)
+  #Generalizability across learning materials (P.13).
+  res <- rma.mv(g, vg, mods = ~ +factor(Items_num), random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), data=Supplement)
+  summary(res, digits=3)  
+  #Table 3
+  #Without Moderators (For estimation of R)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  
+  Table 3
+  
+  #M1
+  res <- rma.mv(g, vg, mods = ~ + Grey_Lit + Design + Students +Retention_Interval + Intentionality + Transfer_Retention + Simultaneity,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis=="0"), data=Supplement)
+  summary(res, digits=3)
+  #M2
+  res <- rma.mv(g, vg, mods = ~ + Grey_Lit + Design + Students +Retention_Interval + Intentionality + Transfer_Retention + Simultaneity + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  #M3
+  res <- rma.mv(g, vg, mods = ~ + Grey_Lit + Design + Students +Retention_Interval + Intentionality + Transfer_Retention + Simultaneity + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis=="0"), data=Supplement)
+  summary(res, digits=3)
+  #Outlier Model without Moderators (For Estimation of R)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_With_Outlier=="0"), data=Supplement)
+  summary(res, digits=3)
+  #Outlier Model
+  res <- rma.mv(g, vg, mods = ~ + Grey_Lit + Design + Students +Retention_Interval + Intentionality + Transfer_Retention + Simultaneity + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_With_Outlier=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  
+  #Table4
+  #All Studies
+  res <- rma.mv(g, vg, mods = ~ Students + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis=="0"), data=Supplement)
+  summary(res, digits=3)
+  #All Studies without moderators (For estimation of R)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis=="0"), data=Supplement)
+  summary(res, digits=3)
+  #Independent
+  res <- rma(g, vg, mods = ~ Students  + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),subset = (Regression_Analysis_IndependentStudies =="0"), data=Supplement)
+  summary(res, digits=3)
+  #Students
+  res <- rma.mv(g, vg, mods = ~ Students  + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Students
+=="0"), data=Supplement)
+  summary(res, digits=3)
+  #Students without moderators (For estimation of R)
+ res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Students
+=="0"), data=Supplement)
+  summary(res, digits=3)
+  # Visual Material
+  res <- rma.mv(g, vg, mods = ~ Students  + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Visual=="0"), data=Supplement)
+  summary(res, digits=3)
+  # Visual Material without moderators (For estimation of R)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Visual=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  #Artifical Pictures
+  res <- rma.mv(g, vg, mods = ~ Students  + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Artifical=="0"), data=Supplement)
+  summary(res, digits=3)
+  # Artifical Pictures without moderators (For estimation of R)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Artifical=="0"), data=Supplement)
+  summary(res, digits=3)
+#Additional Analysis P.17  
+#Mean Age
+  res <- rma.mv(g, vg, mods = ~ Age + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0"), data=Supplement)
+  summary(res, digits=3)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  
+  
+  res <- rma.mv(g, vg, mods = ~ Age + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam + factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0" & Regression_Analysis_Visual=="0"), data=Supplement)
+  summary(res, digits=3)
+  res <- rma.mv(g, vg, mods = ~ZMean_within +ZMean_between+ZMean_complex+ZMean_fam + factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0" & Regression_Analysis_Visual=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0" & Regression_Analysis_Visual=="0"), data=Supplement)
+  summary(res, digits=3)
+  res <- rma.mv(g, vg, mods = ~ Age + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam + + factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0" & Regression_Analysis_Students
+=="0"), data=Supplement)
+  summary(res, digits=5)
+  
+  res <- rma.mv(g, vg, mods = ~ ZMean_within +ZMean_between+ZMean_complex+ZMean_fam + + factor(Items_num),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0" & Regression_Analysis_Students
+=="0"), data=Supplement)
+  summary(res, digits=5)
+  res <- rma.mv(g, vg,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Age=="0" & Regression_Analysis_Students =="0"), data=Supplement)
+  summary(res, digits=4)
+  
+  
+  #Simultaneity P.16
+  res <- rma.mv(g, vg, mods = ~  factor(Simultaneity), subset = (Regression_Analysis_Simultaneity=="0"), random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), data=Supplement)
+  summary(res, digits=3)
+  res <- rma.mv(g, vg, mods = ~  factor(Simultaneity)-1, subset = (Regression_Analysis_Simultaneity=="0"), random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), data=Supplement)
+  summary(res, digits=3)
+  #Transfer P.16
+  res <- rma.mv(g, vg, mods = ~  factor(Transfer_Retention), subset = (Regression_Analysis_TransferRetention
+=="0"), random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), data=Supplement)
+  summary(res, digits=3)
+  
+  #Spacing
+  res <- rma.mv(g, vg, mods = ~  factor(Spaced),  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Spacing=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  
+  res <- rma.mv(g, vg, mods = ~  factor(Spaced)-1,  random = list(~ 1 | EffectsizeID, ~ 1 | StudyID), subset = (Regression_Analysis_Spacing=="0"), data=Supplement)
+  summary(res, digits=3)
+  
+  
+  forest(res, xlim=c(-3.3, 3.3), at = c(-2, -1 , 0 , 1 , 2), xlab= expression("Hedges'"~italic(g)), cex = 0.75, ylim=c(-1, 6))
+  
+#Publication Bias P.29-30
+  #Funnel  
+  res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim
+  res <- rma(g, vg, mods = ~ Students  + ZMean_within +ZMean_between+ZMean_complex+ZMean_fam +factor(Items_num),subset = (Regression_Analysis_IndependentStudies =="0"), data=Supplement)
+  funnel(res, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim
+res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="0"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+ trim
+
+  res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="3"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+ trim
+   res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="1"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim
+  res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="5"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(res, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+ trim
+   res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="2"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim
+  res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="4"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim
+  res <- rma(g, vg,subset = (Regression_Analysis_IndependentStudies =="0"& Items_num =="6"), data=Supplement)
+  trim<- trimfill(res)
+  funnel(trim, yaxis="seinv",level=c(90, 95, 99), xlab= expression("Hedges'"~italic(g)),ylim=c(1, 13), xlim=c(-2, 2),shade=c("white", "gray", "darkgray"),main="Inverse Standard Error")
+  trim
+  summary(res, digits=3)
+
