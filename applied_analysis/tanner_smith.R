@@ -188,8 +188,44 @@ tsl_dat_small <- tsl_dat %>%
 tsl_dat_small <- dummy_cols(tsl_dat_small, select_columns = "dv")
 
 
+Uj <- tsl_dat_small %>%
+  select(g2age) %>%
+  as.matrix()
 
-Uj <- tsl_dat_small$g2age
 Xj <- tsl_dat_small %>%
   select(starts_with("dv_")) %>%
   as.matrix()
+
+
+tau_sq <- cw_full$mod_info$tau.sq
+
+
+# what is the weights???
+dat_null <- cw_null$data.full
+x_null <- cw_null$X.full
+
+# robu changes the order of the data 
+
+k_j <- tsl_dat_small %>%
+  group_by(studyid) %>%
+  summarize(k_j = n_distinct(esid)) %>%
+  ungroup()
+
+
+sigma_sq_j <- tsl_dat_small %>%
+  group_by(studyid) %>%
+  summarize(sigma_sq_j = mean(v)) %>%
+  ungroup()
+
+
+tsl_dat_small <- tsl_dat_small %>%
+  mutate(tau_sq = tau_sq) %>%
+  left_join(k_j, by = "studyid") %>%
+  left_join(sigma_sq_j, by = "studyid") %>%
+  mutate(W_j = 1 / (k_j * (sigma_sq_j + tau_sq)))
+
+
+names(tsl_dat_small)
+
+
+
