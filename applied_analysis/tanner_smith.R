@@ -96,6 +96,8 @@ tsl_dat_check <- tsl_dat %>%
   select(esdata:tvaldep, es21, delta, v)
 
 
+save(tsl_dat, file = "data/tsl_dat.RData")
+
 # Pooling ---------------------------------------------------
 
 # Pooled es estimate 
@@ -164,68 +166,5 @@ rve_mult <- robu(delta ~ dv + g2perwhite + g2permale + g2age + g1txdur + g1numse
                  data = tsl_dat)
 
 rve_mult
-
-
-# Cluster wild bootstrapping ----------------------------------------------
-
-cw_full <- robu(delta ~ dv + g2age, 
-                 studynum = studyid, 
-                 var.eff.size = v,
-                 small = TRUE,
-                 data = tsl_dat)
-
-cw_null <- robu(delta ~ g2age,
-                studynum = studyid, 
-                var.eff.size = v,
-                small = TRUE,
-                data = tsl_dat)
-
-cw_null
-
-tsl_dat_small <- tsl_dat %>%
-  select(studyid, esid, delta, v, dv, g2age) 
-
-tsl_dat_small <- dummy_cols(tsl_dat_small, select_columns = "dv")
-
-
-Uj <- tsl_dat_small %>%
-  select(g2age) %>%
-  as.matrix()
-
-Xj <- tsl_dat_small %>%
-  select(starts_with("dv_")) %>%
-  as.matrix()
-
-
-tau_sq <- cw_full$mod_info$tau.sq
-
-
-# what is the weights???
-dat_null <- cw_null$data.full
-x_null <- cw_null$X.full
-
-# robu changes the order of the data 
-
-k_j <- tsl_dat_small %>%
-  group_by(studyid) %>%
-  summarize(k_j = n_distinct(esid)) %>%
-  ungroup()
-
-
-sigma_sq_j <- tsl_dat_small %>%
-  group_by(studyid) %>%
-  summarize(sigma_sq_j = mean(v)) %>%
-  ungroup()
-
-
-tsl_dat_small <- tsl_dat_small %>%
-  mutate(tau_sq = tau_sq) %>%
-  left_join(k_j, by = "studyid") %>%
-  left_join(sigma_sq_j, by = "studyid") %>%
-  mutate(W_j = 1 / (k_j * (sigma_sq_j + tau_sq)))
-
-
-names(tsl_dat_small)
-
 
 
