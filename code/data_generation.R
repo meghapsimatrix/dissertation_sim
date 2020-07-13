@@ -54,7 +54,6 @@ generate_rsmd(delta = 0, k = 3, N = 20, Psi = 0.7)
 # covs is the design matrix
 # beta is regression coefficients for X (do I need to make an intercept?)
 # v_j random normal with mean 0 and variance tau sq
-# u_ij random normal with mean 0 and variance omega sq
 
 
 # generate es num id
@@ -74,7 +73,7 @@ generate_es_num <- function(dat) {
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 
-generate_rmeta <- function(m, tau, omega, k_mean, N_mean, 
+generate_rmeta <- function(m, tau, k_mean, N_mean, 
                            rho, nu, covs, beta,
                            return_study_params = FALSE) {
   
@@ -115,9 +114,9 @@ generate_rmeta <- function(m, tau, omega, k_mean, N_mean,
   v_j <- rnorm(m, 0, tau)  
   study_id <- design_mat_all$study
   v_j_long <- v_j[study_id]
-  u_ij <- rnorm(m * 10, 0, omega)
+  #u_ij <- rnorm(m * 10, 0, omega)
   
-  true_delta <- tibble(delta = as.vector(X %*% beta) + v_j_long + u_ij, # is this right??
+  true_delta <- tibble(delta = as.vector(X %*% beta) + v_j_long, # is this right??
                        study = study_id) %>%
     group_by(study) %>% 
     summarize(delta = list(delta)) %>% # unnest does mini tibbles so I did this to get vector
@@ -151,7 +150,6 @@ set.seed(342020)
 meta_data <- 
   generate_rmeta(m = 75, 
                  tau = 0.05, 
-                 omega = 0.07,
                  k_mean = 5, 
                  N_mean = 40, 
                  rho = 0.6, 
@@ -163,15 +161,18 @@ check <- meta_data %>%
   group_by(study) %>%
   summarize(n = n())
 
-#-----------------------------------------
+
+
+
+# Study design features ---------------------------------------------------
+
+
 # Use return_study_params to get 
 # distribution of study design features
-#-----------------------------------------
 
 study_features <- 
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
-                 omega = 0.07,
                  k_mean = 5, 
                  N_mean = 40, 
                  rho = 0.6, 
@@ -203,10 +204,10 @@ lmer(delta ~ (1 | study), data = delta_data)
 # Estimated SDs should be very close to tau and omega
 
 
+# True parameter recovery -------------------------------------------------
 
-#-------------------------------------------------
-# Check whether true parameters can be recovered
-#-------------------------------------------------
+
+
 library(clubSandwich)
 library(metafor)
 
