@@ -47,6 +47,8 @@ generate_rsmd(delta = 0, k = 3, N = 20, Psi = 0.7)
 
 # m is the total number of studies
 # tau is the variance of the deltas
+# k_mean is the mean number of effect sizes per study.
+# N_mean is the mean number of participants?
 # rho is the average correlation between pairs of effect sizes within a study
 # nu and rho control variability of r_k across studies smaller nu more variable correlations
 # covs is the design matrix
@@ -71,7 +73,8 @@ generate_es_num <- function(dat) {
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 
-generate_rmeta <- function(m, tau, N_mean, rho, nu, covs, beta,
+generate_rmeta <- function(m, tau, k_mean, N_mean, 
+                           rho, nu, covs, beta,
                            return_study_params = FALSE) {
   
   # Design matrix -----------------------------------------------------------
@@ -94,7 +97,7 @@ generate_rmeta <- function(m, tau, N_mean, rho, nu, covs, beta,
   
   study_data <- 
     tibble(
-      k = sample(1:10, m, replace = TRUE), # 1:10
+      k = pmin(2 + rpois(m, k_mean - 2), 10), # look at some meta analysis 
       N = 20 + 2 * rpois(m, (N_mean - 20) / 2), # distribution of sample size 
       Psi = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
     ) %>%
@@ -102,7 +105,7 @@ generate_rmeta <- function(m, tau, N_mean, rho, nu, covs, beta,
   
   
   # True delta --------------------------------------------------------------
-
+  
   X <- design_mat_all %>%
     select(starts_with("X")) %>%
     as.matrix()
@@ -123,7 +126,7 @@ generate_rmeta <- function(m, tau, N_mean, rho, nu, covs, beta,
   study_data <- study_data %>%
     left_join(true_delta, by = "study") %>%
     select(-study)
-
+  
   if (return_study_params) return(study_data)
   
   # Generate fulll meta data  -----------------------------------------------
@@ -133,7 +136,7 @@ generate_rmeta <- function(m, tau, N_mean, rho, nu, covs, beta,
     mutate(study = as.numeric(study)) %>% # have to do study and es_num here again to join the covs
     generate_es_num() %>%
     left_join(design_mat_all, by = c("study", "es_num"))
-
+  
   
   return(meta_cov_dat)
 }
@@ -147,8 +150,9 @@ set.seed(342020)
 meta_data <- 
   generate_rmeta(m = 75, 
                  tau = 0.05, 
-                 rho = 0.6,
-                 N_mean = 40,
+                 k_mean = 5, 
+                 N_mean = 40, 
+                 rho = 0.6, 
                  nu = 39,
                  covs = design_mat,
                  beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6))
@@ -226,5 +230,3 @@ meta_data <-
 V_mat <- impute_covariance_matrix(vi = meta_data$v, 
                                   cluster = meta_data$study, 
                                   r = 0.6)
-
-# Fit rma.mv model. Estimates should be close to true parameters.
