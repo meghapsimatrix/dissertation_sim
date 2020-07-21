@@ -218,7 +218,7 @@ den_sum <- weights_tau %>%
 den <- den_sum - den_tp
 
 tau_sq <- num/den
-
+tau_sq
 
 
 # Compare to robu ---------------------------------------------------------
@@ -230,4 +230,4 @@ robu_comp <- robu(delta ~ dv + g2age,
                  small = TRUE,
                  data = tsl_dat)
 
-robu_comp
+dat <- robu_comp$data.full
