@@ -172,14 +172,19 @@ calculate_B <- function(w, m){
   w * m_mult
 }
 
-B_num_all <- pmap(list(wts_num_j, X_j), calculate_B)
-
-B_num <- B_num_all %>%
+# the first B for the trace product numerator
+B_num_all_1 <- pmap(list(wts_num_j, X_j), calculate_B)
+B_num_1 <- B_num_all_1 %>%
   reduce(`+`)
 
-B_den_all <- pmap(list(wts_den_j, X_j), calculate_B)
+# the second B for the trace product numerator
+B_num_all_2 <- pmap(list(wts_num_j, p_j), calculate_B)
+B_num_2 <- B_num_all_2 %>%
+  reduce(`+`)
 
-B_den_all <- B_den_all %>%
+# the B for the trade product denominator
+B_den_all <- pmap(list(wts_den_j, p_j), calculate_B)
+B_den <- B_den_all %>%
   reduce(`+`)
 
 
@@ -197,6 +202,32 @@ trace_product <- function(A, B) {
   
 }
 
+num_tp_1 <- trace_product(M_tilde, B_num_1)
+num_tp_2 <- trace_product(M_tilde, B_num_2)
+den_tp <- trace_product(M_tilde, B_den)
+
+
+num <- QE - m + (1 - rho) * num_tp_1 + rho * num_tp_2
+
+
+den_sum <- weights_tau %>% 
+  mutate(den_sum = k_j * w_tilde_j) %>%
+  summarize(den_sum = sum(den_sum)) %>%
+  pull(den_sum)
+
+den <- den_sum - den_tp
+
+tau_sq <- num/den
 
 
 
+# Compare to robu ---------------------------------------------------------
+
+# doesn't match exactly
+robu_comp <- robu(delta ~ dv + g2age, 
+                 studynum = studyid, 
+                 var.eff.size = v,
+                 small = TRUE,
+                 data = tsl_dat)
+
+robu_comp
