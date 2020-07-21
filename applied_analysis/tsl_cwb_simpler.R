@@ -19,36 +19,69 @@ tsl_dat_small <- tsl_dat %>%
   ungroup()
 
 
+
+
+# Calculate QE ------------------------------------------------------------
+
+# fit model with fixed effects weights
 mod_prelim <- lm(delta ~ dv + g2age, data = tsl_dat_small, weights = w_tilde_j)
 
-
-length(residuals(mod_prelim))
-
+# residuals
 tsl_dat_small <- tsl_dat_small %>%
   mutate(res = residuals(mod_prelim))
 
+# calcualte weighted res sum of squares
 QE <- with(tsl_dat_small, sum(w_tilde_j * res^2))
 
-# calculate v -------------------------------------------------------------
+# Create X_j -------------------------------------------------------------
 
+# get the model matrix
 full_x <- model.matrix(mod_prelim)
 
-Xj <- full_x %>%
+# split the data by studyid
+X_j_mat <- full_x %>%
   as_tibble() %>%
   mutate(studyid = tsl_dat_small$studyid) %>%
   group_by(studyid) %>%
-  clean_names()
+  clean_names() %>%
+  group_split()
 
-X_j_mat <- group_split(Xj)
 
-w_tilde_dat <- tsl_dat_small %>%
+# change to matrix format
+change_to_mat <- function(dat){
+  
+  dat %>%
+    select(-studyid) %>%
+    as.matrix()
+  
+}
+
+X_j <- map(X_j_mat, change_to_mat)
+
+
+# Create W_tilde_j -----------------------------------------------------
+
+# split the w_tilde_j
+w_tilde_j <- tsl_dat_small %>%
   select(studyid, w_tilde_j) %>%
   distinct(.) %>%
-  group_by(studyid)
+  group_by(studyid) %>%
+  group_split()
 
-w_tilde_j <- group_split(w_tilde_dat)
+# make w_tilde_j into vectors
+
+change_to_vec <- function(dat){
+  
+  dat %>%
+    pull(2)
+}        
 
 
+
+w_tilde_j <- map(w_tilde_j, change_to_vec)
+
+
+# create identity matrix 
 num_es <- tsl_dat_small %>%
   select(studyid, k_j) %>%
   distinct(.) %>%
@@ -60,30 +93,11 @@ create_identity <- function(k){
   
 }
 
-
 k <- num_es %>% pull(k_j)
-
 I_j <- map(k, create_identity)
 
-change_to_mat <- function(dat){
-  
-  dat %>%
-    select(-studyid) %>%
-    as.matrix()
-  
-}
 
-change_to_vec <- function(dat){
-  
-  dat %>%
-    select(-studyid) %>%
-    pull(w_tilde_j)
-}
-
-
-X_j <- map(X_j_mat, change_to_mat)
-
-w_tilde_j <- map(w_tilde_j, change_to_vec)
+# create the big W_j
 
 create_big_W <- function(w, id){
   
@@ -93,6 +107,9 @@ create_big_W <- function(w, id){
 
 W_tilde_j <- pmap(list(w_tilde_j, I_j), create_big_W)
 
+
+
+# Create M tilde ----------------------------------------------------------
 
 create_m_tilde <- function(X, W){
   
@@ -107,6 +124,8 @@ M_tilde <- M_tilde_all %>%
   solve()
 
 
+# Calculate p_j -----------------------------------------------------------
+
 calculate_p <- function(X){
   
   X %>%
@@ -118,6 +137,52 @@ calculate_p <- function(X){
 
 
 p_j <- map(X_j, calculate_p)
+
+
+
+# trace product -----------------------------------------------------------
+
+weights_tau <- tsl_dat_small %>%
+  select(studyid, k_j, w_tilde_j) %>%
+  distinct(.) %>%
+  mutate(w = w_tilde_j/k_j,
+         w_tilde_j_sq = w_tilde_j^2)
+
+
+wts_num <- weights_tau %>%
+  select(studyid, w) %>%
+  distinct(.) %>%
+  group_by(studyid) %>%
+  group_split()
+
+wts_num_j <- map(wts_num, change_to_vec)
+
+wts_den <- weights_tau %>%
+  select(studyid, w_tilde_j_sq) %>%
+  distinct(.) %>%
+  group_by(studyid) %>%
+  group_split()
+
+wts_den_j <- map(wts_den, change_to_vec)
+
+
+calculate_B <- function(w, m){
+  
+  m_mult <- t(m) %*% m
+  w * m_mult
+}
+
+B_num_all <- pmap(list(wts_num_j, X_j), calculate_B)
+
+B_num <- B_num_all %>%
+  reduce(`+`)
+
+B_den_all <- pmap(list(wts_den_j, X_j), calculate_B)
+
+B_den_all <- B_den_all %>%
+  reduce(`+`)
+
+
 
 
 m <- 75
