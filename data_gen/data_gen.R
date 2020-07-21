@@ -162,7 +162,7 @@ check <- meta_data %>%
   summarize(n = n())
 
 
-
+save(meta_data, file = "data/meta_data_practice.RData")
 
 # Study design features ---------------------------------------------------
 
@@ -198,6 +198,7 @@ delta_data <-
   study_features %>%
   mutate(study = 1:n()) %>%
   unnest(cols = delta)
+
 
 library(lme4)
 lmer(delta ~ (1 | study), data = delta_data)

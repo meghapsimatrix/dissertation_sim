@@ -15,7 +15,7 @@ library(mvtnorm)
 generate_rsmd <- function(delta, k, N, Psi) {
   
   # make sure delta is a vector
-  delta_vec <- rep(delta, length.out = k)
+  delta_vec <- rep(unlist(delta), length.out = k)
   
   # create Psi matrix assuming equicorrelation
   if (!is.matrix(Psi)) Psi <- Psi + diag(1 - Psi, nrow = k) # cor matrix for 1 study
