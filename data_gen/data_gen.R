@@ -98,7 +98,7 @@ generate_rmeta <- function(m, tau, k_mean, N_mean,
   study_data <- 
     tibble(
       k = pmin(2 + rpois(m, k_mean - 2), 10), # look at some meta analysis 
-      N = 20 + 2 * rpois(m, (N_mean - 20) / 2), # distribution of sample size 
+      N = 20 + 2 * rpois(m, 10), # distribution of sample size 
       Psi = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
     ) %>%
     mutate(study = 1:m)
@@ -217,7 +217,6 @@ library(metafor)
 meta_data <- 
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
-                 omega = 0.07,
                  k_mean = 5, 
                  N_mean = 40, 
                  rho = 0.6, 
