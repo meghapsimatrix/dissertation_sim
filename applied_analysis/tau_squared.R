@@ -190,7 +190,7 @@ B_den <- B_den_all %>%
 
 
 
-m <- 75
+m <- 119
 rho <- .8
 
 
@@ -224,10 +224,30 @@ tau_sq
 # Compare to robu ---------------------------------------------------------
 
 # doesn't match exactly
-robu_comp <- robu(delta ~ dv + g2age, 
+robu_comp <- robu(delta ~ g2age + dv, 
                  studynum = studyid, 
                  var.eff.size = v,
                  small = TRUE,
-                 data = tsl_dat)
+                 data = tsl_dat_small)
 
 dat <- robu_comp$data.full
+
+
+# estimate  ---------------------------------------------------------------
+
+tsl_dat_small <- tsl_dat_small %>%
+  mutate(tau_sq = tau_sq) %>%
+  mutate(ce_wts = 1/ (k_j * (sigma_sq_j + tau_sq)))
+
+mod_full <- lm(delta ~ g2age + dv, data = tsl_dat_small, weights = ce_wts)
+mod_null <- lm(delta ~ g2age, data = tsl_dat_small, weights = ce_wts)
+
+summary(mod_full)
+
+Wald_test(mod_full, constraints = 3:7, vcov = "CR1", cluster = tsl_dat_small$studyid, test = "Naive-F")
+Wald_test(mod_full, constraints = 3:7, vcov = "CR2", cluster = tsl_dat_small$studyid, test = "HTZ")
+
+
+Wald_test(robu_comp, constraints = 3:7, vcov = "CR1", test = "Naive-F")
+Wald_test(robu_comp, constraints = 3:7, vcov = "CR2", test = "HTZ")
+
