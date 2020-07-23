@@ -2,6 +2,8 @@ library(tidyverse)
 library(robumeta)
 library(clubSandwich)
 library(janitor)
+library(broom)
+library(estimatr)
 
 
 # Load data and clean -----------------------------------------------------
@@ -36,7 +38,9 @@ QE <- with(tsl_dat_small, sum(w_tilde_j * res^2))
 # Create X_j -------------------------------------------------------------
 
 # get the model matrix
-full_x <- model.matrix(mod_prelim)
+full_x <- as.data.frame(model.matrix(mod_prelim))
+
+split(full_x, tsl_dat_small$studyid)
 
 # split the data by studyid
 X_j_mat <- full_x %>%
@@ -67,6 +71,10 @@ w_tilde_j <- tsl_dat_small %>%
   distinct(.) %>%
   group_by(studyid) %>%
   group_split()
+
+w_tilde_j_all <- unique(tsl_dat_small[, c("studyid", "w_tilde_j")])
+
+w_tilde_j <- split(w_tilde_j_all, w_tilde_j_all$studyid)
 
 # make w_tilde_j into vectors
 
@@ -224,11 +232,11 @@ tau_sq
 # Compare to robu ---------------------------------------------------------
 
 # doesn't match exactly
-robu_comp <- robu(delta ~ g2age + dv, 
+system.time(robu_comp <- robu(delta ~ g2age + dv, 
                  studynum = studyid, 
                  var.eff.size = v,
-                 small = TRUE,
-                 data = tsl_dat_small)
+                 small = FALSE,
+                 data = tsl_dat_small))
 
 dat <- robu_comp$data.full
 
@@ -239,15 +247,19 @@ tsl_dat_small <- tsl_dat_small %>%
   mutate(tau_sq = tau_sq) %>%
   mutate(ce_wts = 1/ (k_j * (sigma_sq_j + tau_sq)))
 
-mod_full <- lm(delta ~ g2age + dv, data = tsl_dat_small, weights = ce_wts)
+system.time(mod_full <- lm(delta ~ g2age + dv, data = tsl_dat_small, weights = ce_wts))
 mod_null <- lm(delta ~ g2age, data = tsl_dat_small, weights = ce_wts)
 
-summary(mod_full)
+mod_res <- tidy(mod_full)
 
 Wald_test(mod_full, constraints = 3:7, vcov = "CR1", cluster = tsl_dat_small$studyid, test = "Naive-F")
 Wald_test(mod_full, constraints = 3:7, vcov = "CR2", cluster = tsl_dat_small$studyid, test = "HTZ")
 
-
+# the HTZ test is a little bit different? 
+# HTZ df estimation from lm vs robu is very different 
+# because of Var(dst?)
 Wald_test(robu_comp, constraints = 3:7, vcov = "CR1", test = "Naive-F")
 Wald_test(robu_comp, constraints = 3:7, vcov = "CR2", test = "HTZ")
+
+
 

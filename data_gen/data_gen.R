@@ -24,7 +24,7 @@ generate_rsmd <- function(delta, k, N, Psi) {
   meandiff <- rmvnorm(n = 1, mean = delta_vec, sigma = (4/N) * Psi) 
   
   # covariance 
-  cov_mat <- rWishart(n = 1, df = N - 2, Sigma = Psi)[,,1]
+  cov_mat <- as.matrix(rWishart(n = 1, df = N - 2, Sigma = Psi)[,,1])
   sigma_sq <- diag(cov_mat) / (N - 2)
   
   # SMD
@@ -97,8 +97,8 @@ generate_rmeta <- function(m, tau, k_mean, N_mean,
   
   study_data <- 
     tibble(
-      k = pmin(2 + rpois(m, k_mean - 2), 10), # look at some meta analysis 
-      N = 20 + 2 * rpois(m, 10), # distribution of sample size 
+      k = pmin(1 + rpois(m, k_mean - 1), 10), # look at some meta analysis 
+      N = pmin(60 + 2 * rpois(m, 40), 200), # distribution of sample size 
       Psi = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
     ) %>%
     mutate(study = 1:m)
@@ -149,10 +149,10 @@ set.seed(342020)
 # some of the smds are really high lol
 meta_data <- 
   generate_rmeta(m = 75, 
-                 tau = 0.05, 
+                 tau = 0.4, 
                  k_mean = 5, 
                  N_mean = 40, 
-                 rho = 0.6, 
+                 rho = 0.8, 
                  nu = 39,
                  covs = design_mat,
                  beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6))
