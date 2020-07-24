@@ -9,7 +9,7 @@ change_to_mat <- function(dat){
 # change to vector
 change_to_vec <- function(dat){
   
-  as.vector(dat[, 2])
+  as.data.frame(dat)[, 2]
   
 }     
 
@@ -69,7 +69,8 @@ calculate_tau_sq <- function(dat, equation_full, rho = .8){
   k_j <- as.numeric(table(dat$study))
   sigma_sq_j <- tapply(dat$v, dat$study, mean)
   w_tilde <- 1 / (k_j * sigma_sq_j)
-  dat$w_tilde_j <- w_tilde[dat$study]
+  dat$w_tilde_j <- rep(w_tilde, k_j)
+  dat$k_j <- rep(k_j, k_j)
   
   m <- length(unique(dat$study))
   
@@ -92,15 +93,13 @@ calculate_tau_sq <- function(dat, equation_full, rho = .8){
   
   # split the w_tilde_j
   w_tilde_j_all <- unique(dat[, c("study", "w_tilde_j")])
-  w_tilde_j <- split(w_tilde_j_all, w_tilde_j_all$studyid)
-
+  w_tilde_j <- split(w_tilde_j_all, w_tilde_j_all$study)
+  
   # make w_tilde into vectors
   w_tilde_j <- map(w_tilde_j, change_to_vec)
   
   # create identity matrix 
-  num_es <- unique(dat[, c("study", "k_j")])
-  k <- as.vector(num_es[, "k_j"])
-  I_j <- map(k, create_identity)
+  I_j <- map(k_j, create_identity)
   
   
   # create the big W_j
@@ -125,13 +124,13 @@ calculate_tau_sq <- function(dat, equation_full, rho = .8){
   
   
   wts_num <- unique(weights_tau[, c("study", "w")])
-  wts_num <- split(wts_num, weights_tau$studyid)
+  wts_num <- split(wts_num, weights_tau$study)
   
   wts_num_j <- map(wts_num, change_to_vec)
   
   
   wts_den <- unique(weights_tau[, c("study", "w_tilde_j_sq")])
-  wts_den <- split(wts_den, weights_tau$studyid)
+  wts_den <- split(wts_den, weights_tau$study)
   
   wts_den_j <- map(wts_den, change_to_vec)
   
@@ -150,11 +149,12 @@ calculate_tau_sq <- function(dat, equation_full, rho = .8){
   B_den <- B_den_all %>%
     reduce(`+`)
   
-
+  
   
   num_tp_1 <- trace_product(M_tilde, B_num_1)
   num_tp_2 <- trace_product(M_tilde, B_num_2)
   den_tp <- trace_product(M_tilde, B_den)
+  
   
   
   num <- QE - m + (1 - rho) * num_tp_1 + rho * num_tp_2

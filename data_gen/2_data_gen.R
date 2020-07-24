@@ -39,9 +39,11 @@ generate_rsmd <- function(delta, k, N, Psi) {
 
 set.seed(202043)
 # one study, 3 effect sizes 
-generate_rsmd(delta = 0, k = 3, N = 20, Psi = 0.7)
+generate_rsmd(delta = 0, k = 3, N = 200, Psi = 0.8)
 
-
+sqrt(.33 * .2)
+sqrt(.2)
+sqrt(1.33 * .2)
 
 # Generate meta data ------------------------------------------------------
 

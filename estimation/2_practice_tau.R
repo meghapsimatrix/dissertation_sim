@@ -5,7 +5,7 @@ library(robumeta)
 library(janitor)
 
 load("data/meta_data_practice.RData")
-source("estimation/estimate_tau.R")
+source("estimation/1_estimate_tau.R")
 load("data/tsl_dat.RData")
 
 tsl_dat <- tsl_dat %>%

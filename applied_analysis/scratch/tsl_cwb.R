@@ -37,6 +37,8 @@ cw_null <- robu(delta ~ g2age,
 tsl_dat_small$res_null <- clubSandwich:::residuals_CS.robu(cw_null)
 
 
+
+
 # creating the -1 and 1 randomly generated weights for the residuals  per study
 num_studies <- unique(tsl_dat_small$studyid)
 eta <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
