@@ -39,12 +39,12 @@ generate_rsmd <- function(delta, k, N, Psi) {
 
 set.seed(202043)
 # one study, 3 effect sizes 
-generate_rsmd(delta = 0, k = 3, N = 100, Psi = 0.8)
+generate_rsmd(delta = 0, k = 3, N = 150, Psi = 0.8)
 
 # tau from Isq (Piggot 2012)
-sqrt(.33* .04)
-sqrt(.04)
-sqrt(1.33 * .04)
+sqrt(.33* .03)
+sqrt(.03)
+sqrt(1.33 * .03)
 
 # Generate meta data ------------------------------------------------------
 
