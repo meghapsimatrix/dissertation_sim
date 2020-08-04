@@ -29,7 +29,7 @@ generate_rsmd <- function(delta, k, N, Psi) {
   
   # SMD
   smd <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
-  v <- sqrt(4 / N + smd^2 / (2 * (N - 2)))
+  v <- 4 / N + smd^2 / (2 * (N - 2))
   
   dat <- tibble(smd = smd, v = v)
   
