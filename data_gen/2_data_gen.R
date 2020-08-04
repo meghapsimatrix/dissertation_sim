@@ -29,9 +29,9 @@ generate_rsmd <- function(delta, k, N, Psi) {
   
   # SMD
   smd <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
-  v <- 4 / N + smd^2 / (2 * (N - 2))
+  var_smd <- 4 / N + smd^2 / (2 * (N - 2))
   
-  dat <- tibble(smd = smd, v = v)
+  dat <- tibble(smd = smd, var_smd = var_smd)
   
   return(dat)
 }
@@ -39,11 +39,12 @@ generate_rsmd <- function(delta, k, N, Psi) {
 
 set.seed(202043)
 # one study, 3 effect sizes 
-generate_rsmd(delta = 0, k = 3, N = 150, Psi = 0.8)
+generate_rsmd(delta = 0, k = 3, N = 100, Psi = 0.8)
 
-sqrt(.33 * .05)
-sqrt(.06)
-sqrt(1.33 * .05)
+# tau from Isq (Piggot 2012)
+sqrt(.33* .04)
+sqrt(.04)
+sqrt(1.33 * .04)
 
 # Generate meta data ------------------------------------------------------
 
@@ -166,6 +167,21 @@ check <- meta_data %>%
 
 save(meta_data, file = "data/meta_data_practice.RData")
 
+
+big_meta <- 
+  generate_rmeta(m = 1000, 
+                 tau = 0.1, 
+                 k_mean = 5, 
+                 N_mean = 100, 
+                 rho = 0.8, 
+                 nu = 50,
+                 covs = design_mat,
+                 beta = matrix(c(0.3, rep(0,5)), nrow = 6),
+                 return_study_params = FALSE)
+
+mean(big_meta$var_smd)
+hist(big_meta$var_smd)
+
 # Study design features ---------------------------------------------------
 
 
@@ -188,6 +204,7 @@ study_features <-
 hist(study_features$k)
 hist(study_features$N)
 hist(study_features$Psi)
+
 
 sd(study_features$Psi) # Should be sqrt(rho (1 - rho) / nu)
 sqrt(0.6 * 0.4 / 50)
