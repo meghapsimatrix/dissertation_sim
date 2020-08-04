@@ -39,11 +39,11 @@ generate_rsmd <- function(delta, k, N, Psi) {
 
 set.seed(202043)
 # one study, 3 effect sizes 
-generate_rsmd(delta = 0, k = 3, N = 200, Psi = 0.8)
+generate_rsmd(delta = 0, k = 3, N = 150, Psi = 0.8)
 
-sqrt(.33 * .2)
-sqrt(.2)
-sqrt(1.33 * .2)
+sqrt(.33 * .05)
+sqrt(.06)
+sqrt(1.33 * .05)
 
 # Generate meta data ------------------------------------------------------
 
@@ -178,7 +178,7 @@ study_features <-
                  k_mean = 5, 
                  N_mean = 40, 
                  rho = 0.6, 
-                 nu = 39,
+                 nu = 50,
                  covs = design_mat,
                  beta = matrix(c(0.3, rep(0,5)), nrow = 6),
                  return_study_params = TRUE)
@@ -190,7 +190,7 @@ hist(study_features$N)
 hist(study_features$Psi)
 
 sd(study_features$Psi) # Should be sqrt(rho (1 - rho) / nu)
-sqrt(0.6 * 0.4 / 1000)
+sqrt(0.6 * 0.4 / 50)
 
 
 
