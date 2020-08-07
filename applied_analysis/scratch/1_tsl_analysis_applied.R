@@ -8,7 +8,7 @@ library(fastDummies)
 
 # Read data ---------------------------------------------------------------
 
-tsl_dat <- read_dta("empirical_data/Tanner_Smith_Lipsey_2015/Data for James.dta") %>%
+tsl_dat <- read_dta("/Users/meghajoshi/Box Sync/Dissertation_Joshi/data_melissa/empirical_data/Tanner_Smith_Lipsey_2015/Data for James.dta") %>%
   select(-referencenum, - refsummary) %>%
   haven::as_factor() %>% 
   mutate_if(is.factor, as.character) %>%

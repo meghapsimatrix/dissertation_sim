@@ -19,7 +19,7 @@ robu_comp_tsl <- robu(delta ~ g2age + dv,
 
 res_age_naive <- Wald_test(robu_comp_tsl, 
           constraints = constrain_zero(2), 
-          vcov = "CR0",
+          vcov = "CR1",
           test = "Naive-F")
 
 res_age_htz <- Wald_test(robu_comp_tsl, 
@@ -37,7 +37,7 @@ constrain_zero(3:7, robu_comp_tsl$reg_table$b.r)
 
 res_mch_naive <- Wald_test(robu_comp_tsl, 
                             constraints = constrain_zero(3:7), 
-                            vcov = "CR0", 
+                            vcov = "CR1", 
                             test = "Naive-F")
 
 res_mch_htz <- Wald_test(robu_comp_tsl, 
