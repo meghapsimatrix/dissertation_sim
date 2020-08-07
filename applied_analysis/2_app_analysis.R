@@ -28,8 +28,6 @@ res_age_htz <- Wald_test(robu_comp_tsl,
           test = "HTZ")
 
 
-
-
 # multiple contrast hypothesis --------------------------------------------
 
 robu_comp_tsl$reg_table$b.r
@@ -44,6 +42,11 @@ res_mch_htz <- Wald_test(robu_comp_tsl,
                             constraints = constrain_zero(3:7), 
                             vcov = "CR2",
                             test = "HTZ")
+
+Wald_test(robu_comp_tsl, 
+          constraints = constrain_zero(3:7), 
+          vcov = "CR2",
+          test = "Naive-F")
       
 
 # cluster wild ------------------------------------------------------------
