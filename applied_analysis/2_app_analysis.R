@@ -66,6 +66,10 @@ null_mod_single <- robu(delta ~ dv,
                         small = TRUE,
                         data = tsl_dat)
 
+
+
+# save the F from the full model ------------------------------------------
+
 Wald_test(full_mod, vcov = "CR2", constraints = constrain_zero(2), test = "Naive-F")
 Wald_test(full_mod, vcov = "CR2", constraints = constrain_zero(3:7), test = "Naive-F")
 
