@@ -135,9 +135,6 @@ cwb <- function(dat, single){
   
 }
 
-# adjustment matrix -------------------------------------------------------
-
-B_j <- attr(vcovCR(full_mod, type = "CR2"), "adjustments")
 
 
 
@@ -157,6 +154,9 @@ mult_mat <- function(x, y){
 
 
 # MCH ---------------------------------------------------------------------
+
+B_j <- attr(vcovCR(null_mod_mch, type = "CR2"), "adjustments")
+
 
 tsl_dat <- tsl_dat %>%
   mutate(res_null = clubSandwich:::residuals_CS.robu(null_mod_mch),
@@ -193,6 +193,9 @@ save(bootstraps_mch, file = "data/bootstrap_mch.RData")
 
 
 # FOR SINGLE COEFS --------------------------------------------------------
+
+B_j <- attr(vcovCR(null_mod_single, type = "CR2"), "adjustments")
+
 
 tsl_dat <- tsl_dat %>%
   mutate(res_null = clubSandwich:::residuals_CS.robu(null_mod_single),
