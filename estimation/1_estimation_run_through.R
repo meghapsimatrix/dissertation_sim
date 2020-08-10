@@ -13,14 +13,14 @@ covs <- c("X1", "X2", "X3", "X4", "X5")
 comb_terms <- function(m, terms = covs) combn(length(terms), m, simplify = FALSE)
 
 indices <- unlist(map(seq_along(1:5), comb_terms), recursive = FALSE)
-equations <- map_chr(indices, function(x) paste(terms[x], collapse = "+"))
+equations <- map_chr(indices, function(x) paste(covs[x], collapse = "+"))
 
 full_mod_indices <- 1:5
 
 
 # null model 
 null_indices <- map(indices, function(x) full_mod_indices[-x])
-null_terms <- map(null_indices, function(x) terms[x])
+null_terms <- map(null_indices, function(x) covs[x])
 null_model <- map_chr(null_terms, function(x) paste(x, collapse = "+"))
 
 
