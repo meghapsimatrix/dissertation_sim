@@ -107,11 +107,7 @@ change_to_mat <- function(res){
   
 }
 
-mult_mat <- function(x, y){
-  
-  x %*% y
-  
-}
+
 
 
 # extract the residuals
@@ -130,7 +126,7 @@ extract_res <- function(mod, dat = meta_data){
 }
 
 system.time(null_res <- map(null_mods, extract_res))
-
+null_res_30 <- null_res[1:30]
 
 
 # extract null cr models --------------------------------------------------
@@ -161,5 +157,21 @@ system.time(null_B <- map(null_mods[1:30], extract_B))
 
 
 # multiply residuals by adj matrices --------------------------------------
+
+#multiply B * e_tilde_j
+
+mult_mat <- function(x, y){
+  
+  x %*% y
+  
+}
+
+# not working right now 
+t_res <- map2(.x = null_B, .y = null_res_30,
+              ~ map2(.x, .y, mult_mat))
+
+
+# res and t_res as vectors instead of matrices ----------------------------
+
 
 
