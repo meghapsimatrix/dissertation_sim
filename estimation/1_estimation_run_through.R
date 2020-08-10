@@ -147,6 +147,14 @@ extract_B(null_mods[[31]])  # works till 30
 # 31 doesn't have a vcov adj matrix 
 # because the model only has an intercept
 
+null_mod <- robu(smd ~ 1, 
+                 studynum = study, 
+                 var.eff.size = var_smd,
+                 small = FALSE,
+                 data = meta_data)
+
+
+attr(vcovCR(null_mod, type = "CR2"), "adjustments")
 
 system.time(null_B <- map(null_mods[1:30], extract_B))
 
