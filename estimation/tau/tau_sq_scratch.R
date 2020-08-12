@@ -1,8 +1,78 @@
 library(tidyverse)
-source("estimation/1_estimate_tau.R")
+library(robumeta)
+
+load("data/tsl_dat.RData")
+
+
+# Helper functions --------------------------------------------------------
+
+
+# change to matrix
+change_to_mat <- function(dat){
+  
+  as.matrix(dat)
+  
+}
+
+# change to vector
+change_to_vec <- function(dat){
+  
+  as.data.frame(dat)[, 2]
+  
+}     
+
+
+# create identity matrix
+create_identity <- function(k){
+  
+  diag(k)
+  
+}
+
+# create_big_W
+create_big_W <- function(w, id){
+  
+  w * id
+  
+}
+
+# create M tilde
+create_M_tilde <- function(X, W){
+  
+  t(X) %*% W %*% X
+  
+}
+
+# calculate p
+calculate_p <- function(X){
+  
+  X %>%
+    as_tibble() %>%
+    summarise_all(sum) %>%
+    as.matrix()
+  
+}
+
+# calculate B
+calculate_B <- function(w, m){
+  
+  m_mult <- t(m) %*% m
+  w * m_mult
+}
+
+# trace product 
+trace_product <- function(A, B) {
+  
+  a_vec <- as.vector(t(A))
+  b_vec <- as.vector(B)
+  sum(a_vec * b_vec)
+  
+}
 
 
 
+
+# calculate tau -----------------------------------------------------------
 
 dat <- tsl_dat
 equation_full <- "delta ~ dv + g2age"
@@ -107,3 +177,10 @@ den_sum <- sum(den_sum_all)
 den <- den_sum - den_tp
 
 tau_sq <- num/den
+tau_sq
+
+robu(delta ~ dv + g2age,
+     studynum = study, 
+     var.eff.size = v,
+     small = FALSE,
+     data = tsl_dat)

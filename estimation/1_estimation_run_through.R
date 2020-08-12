@@ -12,7 +12,7 @@ covs <- c("X1", "X2", "X3", "X4", "X5")
 # terms combinations
 comb_terms <- function(m, terms = covs) combn(length(terms), m, simplify = FALSE)
 
-indices <- unlist(map(seq_along(1:5), comb_terms), recursive = FALSE)
+indices <- flatten(map(seq_along(1:5), comb_terms))
 equations <- map_chr(indices, function(x) paste(covs[x], collapse = "+"))
 
 full_mod_indices <- 1:5
@@ -127,6 +127,7 @@ extract_res <- function(mod, dat = meta_data){
 
 system.time(null_res <- map(null_mods, extract_res))
 null_res_30 <- null_res[1:30]
+null_res_30 <- flatten(null_res_30)
 
 
 # extract null cr models --------------------------------------------------
@@ -154,7 +155,7 @@ attr(vcovCR(null_mod, type = "CR2"), "adjustments")
 
 system.time(null_B <- map(null_mods[1:30], extract_B))
 
-
+null_B
 
 # multiply residuals by adj matrices --------------------------------------
 
@@ -162,16 +163,93 @@ system.time(null_B <- map(null_mods[1:30], extract_B))
 
 mult_mat <- function(x, y){
   
-  x %*% y
+  as.vector(x %*% y)
   
 }
 
-# not working right now 
+
 t_res <- map2(.x = null_B, .y = null_res_30,
               ~ map2(.x, .y, mult_mat))
 
 
 # res and t_res as vectors instead of matrices ----------------------------
 
+null_cr2_res <- map(t_res, unlist)  # the names are all messed up?
+null_res <- map(null_res_30, unlist)
+
+head(transformed_res, 3)
+
+# need to write out parts needed to run the cwb
+# original_res
+# transformed_res 
+# type of test single or mch
+# constraints - indices to test
+# type of test 
+
+# have all of these in a tibble or something then run cwb for each?
+
+params <- tibble(indices = to_test$indices[-31],
+                 null_res = null_res,
+                 null_cr2_res = null_cr2_res)
+
+
+# Extract stats for cwb ---------------------------------------------------
+
+extract_stats <- function(mod, constraints, vcov_mat, method, var){
+  
+  Wald_test(mod, constraints = constraints, vcov = vcov_mat, test = "Naive-F") %>%
+    as_tibble() %>%
+    mutate(type = method,
+           constraint = var)
+}
+
+
+
+# cluster wild bootstrapping ----------------------------------------------
+
+cwb <- function(dat, single){
+  
+  num_studies <- unique(dat$study)
+  wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
+  k_j <- as.numeric(table(dat$study))
+  
+  dat$eta <- rep(wts, k_j)
+  
+  dat$new_t <- with(dat, pred_null + res_null * eta)
+  dat$new_t_adj <- with(dat, pred_null + t_res * eta)
+  
+  
+  full_mod <- robu(new_t ~ g2age + dv, 
+                   studynum = study, 
+                   var.eff.size = v,
+                   small = FALSE,
+                   data = dat)
+  
+  full_mod_adj <- robu(new_t_adj ~ g2age + dv, 
+                       studynum = study, 
+                       var.eff.size = v,
+                       small = FALSE,
+                       data = dat)
+  
+  cov_mat <- vcovCR(full_mod, type = "CR2")
+  cov_mat_adj <- vcovCR(full_mod_adj, type = "CR2")
+  
+  if(single == TRUE){
+    res <- extract_stats(full_mod, constrain_zero(2), cov_mat, "CWB", "age")
+    res_adj <- extract_stats(full_mod_adj, constrain_zero(2), cov_mat_adj, "CWB Adjusted", "age")
+  }
+  else{
+    res <- extract_stats(full_mod, constrain_zero(3:7), cov_mat, "CWB", "mch")
+    res_adj <- extract_stats(full_mod_adj, constrain_zero(3:7), cov_mat_adj, "CWB Adjusted", "mch")
+  }
+  
+  res <- bind_rows(res, res_adj)
+  
+  return(res)
+  
+}
+
+
+# run the cwb -------------------------------------------------------------
 
 

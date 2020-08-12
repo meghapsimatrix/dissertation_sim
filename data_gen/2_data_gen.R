@@ -29,6 +29,7 @@ generate_rsmd <- function(delta, k, N, Psi) {
   
   # SMD
   smd <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
+  smd <- smd * (1 - (3/((4 * N - 2) - 1)))
   var_smd <- 4 / N + smd^2 / (2 * (N - 2))
   
   dat <- tibble(smd = smd, var_smd = var_smd)
@@ -101,7 +102,7 @@ generate_rmeta <- function(m, tau, k_mean, N_mean,
   study_data <- 
     tibble(
       k = pmin(1 + rpois(m, k_mean - 1), 10), # look at some meta analysis 
-      N = pmin(60 + 2 * rpois(m, 40), 200), # distribution of sample size 
+      N = pmin(20 + 2 * rpois(m, 30), 200), # distribution of sample size 
       Psi = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
     ) %>%
     mutate(study = 1:m)
