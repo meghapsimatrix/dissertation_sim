@@ -29,7 +29,7 @@ generate_rsmd <- function(delta, k, N, Psi) {
   
   # SMD
   smd <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
-  smd <- smd * (1 - (3/((4 * N - 2) - 1)))
+  smd <- smd * (1 - (3/((4 * N - 2) - 1))) # hedges g
   var_smd <- 4 / N + smd^2 / (2 * (N - 2))
   
   dat <- tibble(smd = smd, var_smd = var_smd)
