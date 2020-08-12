@@ -29,7 +29,7 @@ generate_rsmd <- function(delta, k, N, Psi) {
   
   # SMD
   smd <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
-  smd <- smd * (1 - (3/((4 * N - 2) - 1))) # hedges g
+  smd <- smd * (1 - (3/((4 * (N - 2)) - 1))) # hedges g
   var_smd <- 4 / N + smd^2 / (2 * (N - 2))
   
   dat <- tibble(smd = smd, var_smd = var_smd)
@@ -40,12 +40,12 @@ generate_rsmd <- function(delta, k, N, Psi) {
 
 set.seed(202043)
 # one study, 3 effect sizes 
-generate_rsmd(delta = 0, k = 3, N = 150, Psi = 0.8)
+generate_rsmd(delta = 0, k = 3, N = 70, Psi = 0.8)
 
 # tau from Isq (Piggot 2012)
-sqrt(.33* .03)
-sqrt(.03)
-sqrt(1.33 * .03)
+sqrt(.33* .05)
+sqrt(.05)
+sqrt(1.33 * .05)
 
 # Generate meta data ------------------------------------------------------
 
