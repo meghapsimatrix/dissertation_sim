@@ -28,11 +28,12 @@ generate_rsmd <- function(delta, k, N, Psi) {
   sigma_sq <- diag(cov_mat) / (N - 2)
   
   # SMD
-  smd <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
-  smd <- smd * (1 - (3/((4 * (N - 2)) - 1))) # hedges g
-  var_smd <- 4 / N + smd^2 / (2 * (N - 2))
+  d <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
+  J <- (1 - (3/((4 * (N - 2)) - 1)))
+  g <- d * (1 - (3/((4 * (N - 2)) - 1))) # hedges g
+  var_g <- J^2 * (4 / N + d^2 / (2 * (N - 2)))
   
-  dat <- tibble(smd = smd, var_smd = var_smd)
+  dat <- tibble(g = g, var_g = var_g)
   
   return(dat)
 }
@@ -180,8 +181,8 @@ big_meta <-
                  beta = matrix(c(0.3, rep(0,5)), nrow = 6),
                  return_study_params = FALSE)
 
-mean(big_meta$var_smd)
-hist(big_meta$var_smd)
+mean(big_meta$var_g)
+hist(big_meta$var_g)
 
 # Study design features ---------------------------------------------------
 
@@ -247,7 +248,7 @@ meta_data <-
 # save(meta_data, file = "data/meta_data_practice.Rdata")
 
 # Use clubSandwich::impute_covariance_matrix with true rho.
-V_mat <- impute_covariance_matrix(vi = meta_data$var_smd, 
+V_mat <- impute_covariance_matrix(vi = meta_data$var_g, 
                                   cluster = meta_data$study, 
                                   r = 0.6)
 

@@ -73,14 +73,14 @@ null_mod_single <- robu(delta ~ dv,
 
 # save the F from the full model ------------------------------------------
 
-Wald_test(full_mod, vcov = "CR2", constraints = constrain_zero(2), test = "Naive-F")
-Wald_test(full_mod, vcov = "CR2", constraints = constrain_zero(3:7), test = "Naive-F")
+Wald_test(full_mod, vcov = "CR1", constraints = constrain_zero(2), test = "Naive-F")
+Wald_test(full_mod, vcov = "CR1", constraints = constrain_zero(3:7), test = "Naive-F")
 
-single_F <- Wald_test(full_mod, vcov = "CR2", test = "Naive-F", constraints = constrain_zero(2)) %>%
+single_F <- Wald_test(full_mod, vcov = "CR1", test = "Naive-F", constraints = constrain_zero(2)) %>%
   as_tibble() %>%
   pull(Fstat)
 
-mch_F <- Wald_test(full_mod, vcov = "CR2", test = "Naive-F", constraints = constrain_zero(3:7)) %>%
+mch_F <- Wald_test(full_mod, vcov = "CR1", test = "Naive-F", constraints = constrain_zero(3:7)) %>%
   as_tibble() %>%
   pull(Fstat)
 
@@ -124,8 +124,8 @@ cwb <- function(dat, single){
                        small = FALSE,
                        data = dat)
   
-  cov_mat <- vcovCR(full_mod, type = "CR2")
-  cov_mat_adj <- vcovCR(full_mod_adj, type = "CR2")
+  cov_mat <- vcovCR(full_mod, type = "CR1")
+  cov_mat_adj <- vcovCR(full_mod_adj, type = "CR1")
   
   if(single == TRUE){
     res <- extract_stats(full_mod, constrain_zero(2), cov_mat, "CWB", "age")
