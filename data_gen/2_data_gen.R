@@ -153,7 +153,7 @@ set.seed(342020)
 
 # some of the smds are really high lol
 meta_data <- 
-  generate_rmeta(m = 75, 
+  generate_rmeta(m = 80, 
                  tau = 0.4, 
                  k_mean = 5, 
                  N_mean = 40, 
@@ -162,9 +162,26 @@ meta_data <-
                  covs = design_mat,
                  beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6))
 
+# generate meta data 
+set.seed(342020)
+
+
+# some of the smds are really high lol
+meta_data_params <- 
+  generate_rmeta(m = 80, 
+                 tau = 0.4, 
+                 k_mean = 5, 
+                 N_mean = 40, 
+                 rho = 0.8, 
+                 nu = 39,
+                 covs = design_mat,
+                 beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6), return_study_params = TRUE)
+
 check <- meta_data %>%
   group_by(study) %>%
   summarize(n = n())
+
+meta_data <- left_join(meta_data, meta_data_params %>% select(k, N) %>% mutate(study = 1:80))
 
 
 save(meta_data, file = "data/meta_data_practice.RData")
