@@ -8,14 +8,14 @@ load("data/tsl_dat.RData")
 
 
 # change to matrix
-change_to_mat <- function(dat){
+change_to_mat <- function(dat) {
   
   as.matrix(dat)
   
 }
 
 # change to vector
-change_to_vec <- function(dat){
+change_to_vec <- function(dat) {
   
   as.data.frame(dat)[, 2]
   
@@ -23,14 +23,14 @@ change_to_vec <- function(dat){
 
 
 # create identity matrix
-create_identity <- function(k){
+create_identity <- function(k) {
   
   diag(k)
   
 }
 
 # create_big_W
-create_big_W <- function(w, id){
+create_big_W <- function(w, id) {
   
   w * id
   
@@ -112,7 +112,6 @@ w_tilde_j <- map(w_tilde_j, change_to_vec)
 # create identity matrix 
 I_j <-  map(k_j, create_identity)
 
-
 # create the big W_j
 W_tilde_j <- pmap(list(w_tilde_j, I_j), create_big_W)
 
@@ -123,6 +122,7 @@ M_tilde_all <- pmap(list(X_j, W_tilde_j), create_M_tilde)
 M_tilde <- M_tilde_all %>% 
   reduce(`+`) %>%
   solve()
+
 
 # Calculate p_j -----------------------------------------------------------
 p_j <- map(X_j, calculate_p)

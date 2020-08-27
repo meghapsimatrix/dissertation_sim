@@ -88,19 +88,18 @@ mch_F <- Wald_test(full_mod, vcov = "CR1", test = "Naive-F", constraints = const
 
 # Extract stats for cwb ---------------------------------------------------
 
-extract_stats <- function(mod, constraints, vcov_mat, method, var){
+extract_stats <- function(mod, constraints, vcov_mat, method){
   
   Wald_test(mod, constraints = constraints, vcov = vcov_mat, test = "Naive-F") %>%
     as_tibble() %>%
-    mutate(type = method,
-           constraint = var)
+    mutate(type = method)
 }
 
 
 
 # cluster wild bootstrapping ----------------------------------------------
 
-cwb <- function(dat, single){
+cwb <- function(dat, constraints) {
   
   num_studies <- unique(dat$study)
   wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
@@ -127,14 +126,8 @@ cwb <- function(dat, single){
   cov_mat <- vcovCR(full_mod, type = "CR1")
   cov_mat_adj <- vcovCR(full_mod_adj, type = "CR1")
   
-  if(single == TRUE){
-    res <- extract_stats(full_mod, constrain_zero(2), cov_mat, "CWB", "age")
-    res_adj <- extract_stats(full_mod_adj, constrain_zero(2), cov_mat_adj, "CWB Adjusted", "age")
-  }
-  else{
-    res <- extract_stats(full_mod, constrain_zero(3:7), cov_mat, "CWB", "mch")
-    res_adj <- extract_stats(full_mod_adj, constrain_zero(3:7), cov_mat_adj, "CWB Adjusted", "mch")
-  }
+  res <- extract_stats(full_mod, constraints, cov_mat, "CWB")
+  res_adj <- extract_stats(full_mod_adj, constraints, cov_mat_adj, "CWB Adjusted")
   
   res <- bind_rows(res, res_adj)
   
@@ -149,7 +142,7 @@ cwb <- function(dat, single){
 
 change_to_mat <- function(dat){
   
-  as.matrix(dat[, 2])
+  as.matrix(dat)
   
 }
 
@@ -169,28 +162,27 @@ tsl_dat <- tsl_dat %>%
   mutate(res_null = clubSandwich:::residuals_CS.robu(null_mod_mch),
          pred_null = delta - res_null)
 
-
-e_tilde_j_all <- tsl_dat[, c("study", "res_null")]
-e_tilde_j <- split(e_tilde_j_all, e_tilde_j_all$study)
+e_tilde_j <- split(tsl_dat$res_null, tsl_dat$study)
 e_tilde_j <- map(e_tilde_j, change_to_mat)
 
 # transformed new residuals
 tsl_dat$t_res <- unlist(pmap(list(B_j, e_tilde_j), mult_mat))
 
 
-cwb(tsl_dat, single = FALSE)
+
+cwb(tsl_dat, constraints = constrain_zero(2))
 
 
 set.seed(7232020)
 
 system.time(
 
-bootstraps_mch <- rerun(.n = 999, {
-  
-  cwb(tsl_dat, single = FALSE)
-  
-}) %>%
-  bind_rows()
+  bootstraps_mch <- rerun(.n = 999, {
+    
+    cwb(tsl_dat, constraints = constrain_zero(3:7))
+    
+  }) %>%
+    bind_rows()
 
 )
 
@@ -208,9 +200,7 @@ tsl_dat <- tsl_dat %>%
   mutate(res_null = clubSandwich:::residuals_CS.robu(null_mod_single),
          pred_null = delta - res_null)
 
-
-e_tilde_j_all <- tsl_dat[, c("study", "res_null")]
-e_tilde_j <- split(e_tilde_j_all, e_tilde_j_all$study)
+e_tilde_j <- split(tsl_dat$res_null, tsl_dat$study)
 e_tilde_j <- map(e_tilde_j, change_to_mat)
 
 # transformed new residuals
@@ -222,7 +212,7 @@ system.time(
   
   bootstraps_age <- rerun(.n = 999, {
     
-    cwb(tsl_dat, single = TRUE)
+    cwb(tsl_dat, constraints = constrain_zero(2))
     
   }) %>%
     bind_rows()
@@ -236,23 +226,17 @@ save(bootstraps_age, file = "data/bootstrap_age.RData")
 # Calculate the bootstrap p value -----------------------------------------
 
 
+age_boot <- bootstraps_age %>%
+  group_by(type) %>%
+  summarize(p = mean(Fstat > single_F)) %>%
+  ungroup() %>%
+  rename(Method = type)
 
-
-calc_p_value <- function(dat, var, method, comp){
-  
-  dat %>%
-    filter(constraint == var & type == method) %>%
-    summarize(p = mean(Fstat > comp)) %>%
-    mutate(Method = method)
-  
-}
-
-
-
-res_age_cwb <- calc_p_value(dat = bootstraps_age, var = "age", method = "CWB", comp = single_F)
-res_age_cwb_adj <- calc_p_value(dat = bootstraps_age, var = "age", method = "CWB Adjusted", comp = single_F)
-res_mch_cwb <- calc_p_value(dat = bootstraps_mch, var = "mch", method = "CWB", comp = mch_F)
-res_mch_cwb_adj <- calc_p_value(dat = bootstraps_mch, var = "mch", method = "CWB Adjusted", comp = mch_F)
+mch_boot <- bootstraps_mch %>%
+  group_by(type) %>%
+  summarize(p = mean(Fstat > mch_F)) %>%
+  ungroup() %>%
+  rename(Method = type)
 
 
 # output the results ------------------------------------------------------
@@ -260,9 +244,8 @@ res_mch_cwb_adj <- calc_p_value(dat = bootstraps_mch, var = "mch", method = "CWB
 # singe coefs
 
 res_sc <- bind_rows(res_age_naive, res_age_htz) %>%
-  mutate(Method = test) %>%
-  select(Method, `F` = Fstat, delta, df_num, df_denom, p = p_val) %>%
-  bind_rows(res_age_cwb, res_age_cwb_adj) %>%
+  select(Method = test, `F` = Fstat, delta, df_num, df_denom, p = p_val) %>%
+  bind_rows(age_boot) %>%
   mutate_if(is.numeric, round, 3)
 
 
@@ -272,9 +255,8 @@ print(xtable(res_sc, digits = 3), file = "tsl_sc_app.tex")
 # multi-contrast hypothesis
 
 res_mch <- bind_rows(res_mch_naive, res_mch_htz) %>%
-  mutate(Method = test) %>%
-  select(Method, `F` = Fstat, delta, df_num, df_denom, p = p_val) %>%
-  bind_rows(res_mch_cwb, res_mch_cwb_adj) %>%
+  select(Method = test, `F` = Fstat, delta, df_num, df_denom, p = p_val) %>%
+  bind_rows(mch_boot) %>%
   mutate_if(is.numeric, round, 3)
 
 print(xtable(res_mch, digits = 3), file = "tsl_mch_app.tex")

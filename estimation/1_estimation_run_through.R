@@ -37,12 +37,12 @@ to_test <- tibble(equ = equations,
 # full model --------------------------------------------------------------
 
 dat <- meta_data
-full_formula <- "smd ~ X1 + X2 + X3 + X4 + X5"
+full_formula <- "g ~ X1 + X2 + X3 + X4 + X5"
 
 
 full_mod <- robu(as.formula(full_formula), 
                  studynum = study, 
-                 var.eff.size = var_smd,
+                 var.eff.size = var_g,
                  small = FALSE,
                  data = dat)
 
@@ -51,14 +51,19 @@ full_mod
 
 # function to run wald test -----------------------------------------------
 
+#a) fitted full model and b) null model specification/indices, and t
+# he outputs would be a data frame with the test results corresponding to that hypothesis. 
 
-get_wald <- function(model, constraints, cov_mat, test){
+get_wald <- function(model, indices, cov_mat, test){
          
   Wald_test(model, 
-            constraints = constrain_zero(constraints), 
+            constraints = constrain_zero(indices), 
             vcov = cov_mat,
             test = test)
 }
+
+get_wald(full_mod, indices = 2, cov_mat = vcovCR(full_mod, type = "CR1"), test = "Naive-F")
+get_wald(full_mod, indices = 3, cov_mat = vcovCR(full_mod, type = "CR1"), test = "HTZ")
 
 
 # run wald ----------------------------------------------------------------
@@ -66,16 +71,8 @@ get_wald <- function(model, constraints, cov_mat, test){
 cov_mat_cr1 <- vcovCR(full_mod, type = "CR1")
 cov_mat_cr2 <- vcovCR(full_mod, type = "CR2")
 
-full_mod <- list(full_mod)
-cov_mat_cr1 <- list(cov_mat_cr1)
-cov_mat_cr2 <- list(cov_mat_cr2)
-naive <- list("Naive-F")
-htz <- list("HTZ")
-
-
-
-system.time(naive_test <- pmap_dfr(list(full_mod, to_test$indices, cov_mat_cr1, "Naive-F"), get_wald))
-system.time(htz_test <- pmap_dfr(list(full_mod, to_test$indices, cov_mat_cr2, "HTZ"), get_wald))
+system.time(naive_test <- map_dfr(to_test$indices, get_wald, model = full_mod, cov_mat = cov_mat_cr1, test = "Naive-F"))
+system.time(htz_test <- map_dfr(to_test$indices, get_wald, model = full_mod, cov_mat = cov_mat_cr2, test = "HTZ"))
 
 naive_res <- bind_cols(to_test %>% select(equ, type), naive_test)
 htz_res <- bind_cols(to_test %>% select(equ, type), htz_test)
@@ -84,23 +81,24 @@ htz_res <- bind_cols(to_test %>% select(equ, type), htz_test)
 
 # fit null mods
 
-fit_mod <- function(equation, dat = meta_data){
+fit_mod <- function(equation, dat = meta_data) {
   
   robu(as.formula(equation), 
        studynum = study, 
-       var.eff.size = var_smd,
+       var.eff.size = var_g,
        small = FALSE,
        data = dat)
 
 }
 
-params <- tibble(equation = paste("smd ~ ", to_test$null_model)) 
+params <- tibble(equation = paste("g ~ ", to_test$null_model)) 
   
 system.time(null_mods <- map(params$equation, fit_mod))
 
 
-# extract residuals -------------------------------------------------------
 
+
+# run the cwb -------------------------------------------------------------
 
 change_to_mat <- function(res){
   
@@ -108,93 +106,12 @@ change_to_mat <- function(res){
   
 }
 
-
-
-
-# extract the residuals
-
-extract_res <- function(mod, dat = meta_data){
-
-  res <- clubSandwich:::residuals_CS.robu(mod)
-  study <- dat$study
-
-  split_res <- split(res, study)
-
-  e_tilde_j <- map(split_res, change_to_mat)
-
-  return(list(e_tilde_j))
-
-}
-
-system.time(null_res <- map(null_mods, extract_res))
-null_res_30 <- null_res[1:30]
-null_res_30 <- flatten(null_res_30)
-
-
-# extract null cr models --------------------------------------------------
-
-# this is not running
-
-extract_B <- function(mod){
-  
-  attr(vcovCR(mod, type = "CR2"), "adjustments")
-  
-}
-
-extract_B(null_mods[[31]])  # works till 30
-# 31 doesn't have a vcov adj matrix 
-# because the model only has an intercept
-
-null_mod <- robu(smd ~ 1, 
-                 studynum = study, 
-                 var.eff.size = var_smd,
-                 small = FALSE,
-                 data = meta_data)
-
-
-attr(vcovCR(null_mod, type = "CR2"), "adjustments")
-
-system.time(null_B <- map(null_mods[1:30], extract_B))
-
-null_B
-
-# multiply residuals by adj matrices --------------------------------------
-
-#multiply B * e_tilde_j
-
-mult_mat <- function(x, y){
+mult_mat <- function(x, y) {
   
   as.vector(x %*% y)
   
 }
 
-
-t_res <- map2(.x = null_B, .y = null_res_30,
-              ~ map2(.x, .y, mult_mat))
-
-
-# res and t_res as vectors instead of matrices ----------------------------
-
-null_cr2_res <- map(t_res, unlist)  # the names are all messed up?
-null_res <- map(null_res_30, unlist)
-
-head(transformed_res, 3)
-
-# need to write out parts needed to run the cwb
-# original_res
-# transformed_res 
-# type of test single or mch
-# constraints - indices to test
-# type of test 
-
-# have all of these in a tibble or something then run cwb for each?
-
-params <- tibble(indices = to_test$indices[-31],
-                 null_res = null_res,
-                 null_cr2_res = null_cr2_res)
-
-
-# Extract stats for cwb ---------------------------------------------------
 
 extract_stats <- function(mod, C, vcov_mat, method){
   
@@ -205,29 +122,45 @@ extract_stats <- function(mod, C, vcov_mat, method){
 
 
 
-# cluster wild bootstrapping ----------------------------------------------
+cwb <- function(dat, null_mod, indices){
+  
 
-cwb <- function(dat, single, constraints){
+  # residuals and transformed residuals -------------------------------------
+
+  dat$res <- clubSandwich:::residuals_CS.robu(null_mod)
+  dat$pred <- with(dat, g - res)
+  split_res <- split(dat$res, dat$study)
+  e_tilde_j <- map(split_res, change_to_mat)
+  B_j <- attr(vcovCR(null_mod, type = "CR2"), "adjustments")
+  dat$t_res <- unlist(pmap(list(B_j, e_tilde_j), mult_mat))
+  
+
+  # Rademacher weights ------------------------------------------------------
   
   num_studies <- unique(dat$study)
   wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
   k_j <- as.numeric(table(dat$study))
-  
   dat$eta <- rep(wts, k_j)
+  dat$new_t <- with(dat, pred + res * eta)
+  dat$new_t_adj <- with(dat, pred + t_res * eta)
   
-  dat$new_t <- with(dat, pred_null + res_null * eta)
-  dat$new_t_adj <- with(dat, pred_null + t_res * eta)
   
+
+  # fit the models ----------------------------------------------------------
+
   
   full_mod <- fit_mod("new_t ~ X1 + X2 + X3 + X4 + X5", dat)
   full_mod_adj <- fit_mod("new_t_adj ~ X1 + X2 + X3 + X4 + X5", dat)
   
+
+  # extract test stats -------------------------------------------------------
+
   cov_mat <- vcovCR(full_mod, type = "CR1")
   cov_mat_adj <- vcovCR(full_mod_adj, type = "CR1")
-
-  res <- extract_stats(full_mod, constrain_zero(constraints), cov_mat, "CWB")
-  res_adj <- extract_stats(full_mod_adj, constrain_zero(constraints), cov_mat_adj, "CWB Adjusted")
- 
+  
+  res <- extract_stats(full_mod, constrain_zero(indices), cov_mat, "CWB")
+  res_adj <- extract_stats(full_mod_adj, constrain_zero(indices), cov_mat_adj, "CWB Adjusted")
+  
   
   res <- bind_rows(res, res_adj)
   
@@ -236,6 +169,5 @@ cwb <- function(dat, single, constraints){
 }
 
 
-# run the cwb -------------------------------------------------------------
-
+cwb(dat = dat, null_mod = null_mods[[1]], indices = 2)
 
