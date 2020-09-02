@@ -122,7 +122,7 @@ extract_stats <- function(mod, C, vcov_mat, method){
 
 
 
-cwb <- function(dat, null_mod, indices){
+cwb <- function(dat, null_mod, indices) {
   
 
   # residuals and transformed residuals -------------------------------------
