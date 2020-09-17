@@ -13,6 +13,7 @@ covs <- c("X1", "X2", "X3", "X4", "X5")
 comb_terms <- function(m, terms = covs) combn(length(terms), m, simplify = FALSE)
 
 indices <- flatten(map(seq_along(1:5), comb_terms))
+indices_test <- map(indices, function(x) x + 1)
 equations <- map_chr(indices, function(x) paste(covs[x], collapse = "+"))
 
 full_mod_indices <- 1:5
@@ -31,7 +32,8 @@ to_test <- tibble(equ = equations,
   mutate(null_indices = null_indices,
          null_terms = null_terms, 
          null_model = null_model, 
-         null_model = if_else(null_model == "", "1", null_model))
+         null_model = if_else(null_model == "", "1", null_model),
+         indices_test = indices_test)
 
 
 # full model --------------------------------------------------------------
@@ -40,13 +42,13 @@ dat <- meta_data
 full_formula <- "g ~ X1 + X2 + X3 + X4 + X5"
 
 
-full_mod <- robu(as.formula(full_formula), 
+full_model <- robu(as.formula(full_formula), 
                  studynum = study, 
                  var.eff.size = var_g,
                  small = FALSE,
                  data = dat)
 
-full_mod
+full_model
 
 
 # function to run wald test -----------------------------------------------
@@ -54,25 +56,27 @@ full_mod
 #a) fitted full model and b) null model specification/indices, and t
 # he outputs would be a data frame with the test results corresponding to that hypothesis. 
 
-get_wald <- function(model, indices, cov_mat, test){
+get_wald <- function(model, indices_test, cov_mat, test){
          
   Wald_test(model, 
-            constraints = constrain_zero(indices), 
+            constraints = constrain_zero(indices_test), 
             vcov = cov_mat,
-            test = test)
+            test = test) %>%
+    select(test, p_val)
 }
 
-get_wald(full_mod, indices = 2, cov_mat = vcovCR(full_mod, type = "CR1"), test = "Naive-F")
-get_wald(full_mod, indices = 3, cov_mat = vcovCR(full_mod, type = "CR1"), test = "HTZ")
+get_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"), test = "Naive-F")
+get_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"), test = "HTZ")
+
 
 
 # run wald ----------------------------------------------------------------
 
-cov_mat_cr1 <- vcovCR(full_mod, type = "CR1")
-cov_mat_cr2 <- vcovCR(full_mod, type = "CR2")
+cov_mat_cr1 <- vcovCR(full_model, type = "CR1")
+cov_mat_cr2 <- vcovCR(full_model, type = "CR2")
 
-system.time(naive_test <- map_dfr(to_test$indices, get_wald, model = full_mod, cov_mat = cov_mat_cr1, test = "Naive-F"))
-system.time(htz_test <- map_dfr(to_test$indices, get_wald, model = full_mod, cov_mat = cov_mat_cr2, test = "HTZ"))
+system.time(naive_test <- map_dfr(to_test$indices_test, get_wald, model = full_model, cov_mat = cov_mat_cr1, test = "Naive-F"))
+system.time(htz_test <- map_dfr(to_test$indices_test, get_wald, model = full_model, cov_mat = cov_mat_cr2, test = "HTZ"))
 
 naive_res <- bind_cols(to_test %>% select(equ, type), naive_test)
 htz_res <- bind_cols(to_test %>% select(equ, type), htz_test)
@@ -117,12 +121,13 @@ extract_stats <- function(mod, C, vcov_mat, method){
   
   Wald_test(mod, constraints = C, vcov = vcov_mat, test = "Naive-F") %>%
     as_tibble() %>%
-    mutate(type = method)
+    mutate(type = method) %>%
+    select(type, Fstat)
 }
 
 
 
-cwb <- function(dat, null_mod, indices) {
+cwb <- function(dat, null_mod, full_mod = full_model, indices) {
   
 
   # residuals and transformed residuals -------------------------------------
@@ -138,36 +143,59 @@ cwb <- function(dat, null_mod, indices) {
   # Rademacher weights ------------------------------------------------------
   
   num_studies <- unique(dat$study)
-  wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
   k_j <- as.numeric(table(dat$study))
+  
+  set.seed(8062020)
+  
+  system.time(
+    
+  bootstraps <- rerun(.n = 399, {
+
+  wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
   dat$eta <- rep(wts, k_j)
   dat$new_t <- with(dat, pred + res * eta)
   dat$new_t_adj <- with(dat, pred + t_res * eta)
   
-  
-
-  # fit the models ----------------------------------------------------------
-
-  
   full_mod <- fit_mod("new_t ~ X1 + X2 + X3 + X4 + X5", dat)
   full_mod_adj <- fit_mod("new_t_adj ~ X1 + X2 + X3 + X4 + X5", dat)
   
-
-  # extract test stats -------------------------------------------------------
-
   cov_mat <- vcovCR(full_mod, type = "CR1")
   cov_mat_adj <- vcovCR(full_mod_adj, type = "CR1")
   
   res <- extract_stats(full_mod, constrain_zero(indices), cov_mat, "CWB")
   res_adj <- extract_stats(full_mod_adj, constrain_zero(indices), cov_mat_adj, "CWB Adjusted")
   
+  bind_rows(res, res_adj)
   
-  res <- bind_rows(res, res_adj)
+  }) %>%
+    bind_rows()
   
-  return(res)
+  )
+  
+  org_F <- Wald_test(full_mod, 
+                     constraints = constrain_zero(indices), 
+                     vcov = vcovCR(full_mod, type = "CR1"),
+                     test = "Naive-F") %>%
+    pull(Fstat)
+  
+  
+  p_boot <- bootstraps %>%
+    group_by(type) %>%
+    summarize(p_val = mean(Fstat > org_F)) %>%
+    ungroup() 
+  
+  
+  return(p_boot)
   
 }
 
 
-cwb(dat = dat, null_mod = null_mods[[1]], indices = 2)
+# Similar to HTZ and Naive F
 
+system.time(res <- cwb(dat = dat, null_mod = null_mods[[1]], indices = 2))
+
+Wald_test(full_model, constraints = constrain_zero(2), 
+          vcov = vcovCR(full_model, type = "CR2"), test = "HTZ")
+
+Wald_test(full_model, constraints = constrain_zero(2), 
+          vcov = vcovCR(full_model, type = "CR1"), test = "Naive-F")
