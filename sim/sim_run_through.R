@@ -154,14 +154,12 @@ estimate <- function(dat, design_params) {
 
 calc_performance <- function(results, alpha) {
   
-  K <- length(p_vals)
-  
   performance_measures  <- results %>%
     filter(!is.na(p_vals)) %>%
     group_by(method) %>%
     summarize(K = n(),
               rej_rate = mean(p_vals < alpha),
-              sqrt((rej_rate * (1 - rej_rate))/K))
+              mcse = sqrt((rej_rate * (1 - rej_rate))/K))
 
   return(performance_measures)
 }
@@ -232,38 +230,18 @@ nrow(params)
 head(params)
 
 
-
 #--------------------------------------------------------
-# run simulations in serial - purrr workflow
-#--------------------------------------------------------
-library(purrr)
-
-system.time(
-  results <-
-    params %>%
-    mutate(res = pmap(., .f = run_sim)) %>%
-    unnest(cols = res)
-)
-
-
-#--------------------------------------------------------
-# run simulations in parallel - future + furrr workflow
+# run simulations in parallel - mdply workflow
 #--------------------------------------------------------
 
-library(future)
-library(furrr)
+library(Pusto)
 
-plan(multisession) # choose an appropriate plan from the future package
-evaluate_by_row(params, run_sim)
+cluster <- start_parallel(source_obj = source_obj, register = TRUE)
 
-# OR
-plan(multisession)
-system.time(
-  results <-
-    params %>%
-    mutate(res = future_pmap(., .f = run_sim)) %>%
-    unnest(cols = res)
-)
+system.time(results <- plyr::mdply(params, .fun = run_sim, .parallel = TRUE))
+
+stopCluster(cluster)
+
 
 #--------------------------------------------------------
 # Save results and details
