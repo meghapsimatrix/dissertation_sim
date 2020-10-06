@@ -78,9 +78,14 @@ generate_es_num <- function(dat) {
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 
-generate_rmeta <- function(m, tau, k_mean, N_mean, 
-                           rho, nu, covs, beta,
+generate_rmeta <- function(m, tau, 
+                           rho, covs, beta,
                            return_study_params = FALSE) {
+  
+  k_mean <- 4
+  N_mean <- 30
+  nu <- 50
+  beta <- matrix(beta, nrow = 8)
   
   # Design matrix -----------------------------------------------------------
   
@@ -102,8 +107,8 @@ generate_rmeta <- function(m, tau, k_mean, N_mean,
   
   study_data <- 
     tibble(
-      k = pmin(1 + rpois(m, k_mean - 1), 10), # look at some meta analysis 
-      N = pmin(20 + 2 * rpois(m, 30), 200), # distribution of sample size 
+      k = pmin(1 + rpois(m, k_mean), 10), # look at some meta analysis 
+      N = pmin(20 + 2 * rpois(m, N_mean), 200), # distribution of sample size 
       Psi = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
     ) %>%
     mutate(study = 1:m)
@@ -155,12 +160,9 @@ set.seed(342020)
 meta_data <- 
   generate_rmeta(m = 80, 
                  tau = 0.4, 
-                 k_mean = 5, 
-                 N_mean = 40, 
                  rho = 0.8, 
-                 nu = 39,
                  covs = design_mat,
-                 beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6))
+                 beta = c(1, .1, .5, .3, .6, .7, .6, .5))
 
 # generate meta data 
 set.seed(342020)
@@ -170,12 +172,10 @@ set.seed(342020)
 meta_data_params <- 
   generate_rmeta(m = 80, 
                  tau = 0.4, 
-                 k_mean = 5, 
-                 N_mean = 40, 
                  rho = 0.8, 
-                 nu = 39,
                  covs = design_mat,
-                 beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6), return_study_params = TRUE)
+                 beta = c(1, .1, .5, .3, .6, .7, .6, .5), 
+                 return_study_params = TRUE)
 
 check <- meta_data %>%
   group_by(study) %>%
@@ -190,12 +190,9 @@ save(meta_data, file = "data/meta_data_practice.RData")
 big_meta <- 
   generate_rmeta(m = 1000, 
                  tau = 0.1, 
-                 k_mean = 5, 
-                 N_mean = 100, 
                  rho = 0.8, 
-                 nu = 50,
                  covs = design_mat,
-                 beta = matrix(c(0.3, rep(0,5)), nrow = 6),
+                 beta = c(0.3, rep(0,7)),
                  return_study_params = FALSE)
 
 mean(big_meta$var_g)
@@ -210,12 +207,9 @@ hist(big_meta$var_g)
 study_features <- 
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
-                 k_mean = 5, 
-                 N_mean = 40, 
                  rho = 0.6, 
-                 nu = 50,
                  covs = design_mat,
-                 beta = matrix(c(0.3, rep(0,5)), nrow = 6),
+                 beta = c(0.3, rep(0, 7)),
                  return_study_params = TRUE)
 
 # check means of k, N, Psi
@@ -255,12 +249,9 @@ library(metafor)
 meta_data <- 
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
-                 k_mean = 5, 
-                 N_mean = 40, 
                  rho = 0.6, 
-                 nu = 4000,
                  covs = design_mat,
-                 beta = matrix(c(1, .1, .5, .3, .6, .7), nrow = 6))
+                 beta = c(1, .1, .5, .3, .6, .7, .5, .6))
 
 # save(meta_data, file = "data/meta_data_practice.Rdata")
 
