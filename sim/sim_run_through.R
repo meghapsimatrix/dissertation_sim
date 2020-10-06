@@ -252,7 +252,7 @@ design_factors <- list(
 params <-
   cross_df(design_factors) %>%
   mutate(
-    iterations = 1000, # change this to how many ever iterations
+    iterations = 4000, # change this to how many ever iterations
     seed = round(runif(1) * 2^30) + 1:n()
   )
 
