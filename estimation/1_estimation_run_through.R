@@ -7,17 +7,23 @@ load("data/meta_data_practice.RData")
 
 # combinations ------------------------------------------------------------
 
-covs <- c("X1", "X2", "X3", "X4", "X5")
+covs <- c("X1", "X2", "X3", "X4", "X5", "X6_B+X6_C")
 
 # terms combinations
 comb_terms <- function(m, terms = covs) combn(length(terms), m, simplify = FALSE)
 
-indices <- flatten(map(seq_along(1:5), comb_terms))
+indices <- flatten(map(seq_along(1:6), comb_terms))
 indices_test <- map(indices, function(x) x + 1)
+
+
+indices_test_2 <- map(indices_test, function(x) ifelse(x == 7, c(7, 8), x))
+
+
 equations <- map_chr(indices, function(x) paste(covs[x], collapse = "+"))
 
-full_mod_indices <- 1:5
+full_mod_indices <- 1:6
 
+terms <- c("X1", "X2", "X3", "X4", "X5", "X6_B", "X6_C")
 
 # null model 
 null_indices <- map(indices, function(x) full_mod_indices[-x])
@@ -27,7 +33,7 @@ null_model <- map_chr(null_terms, function(x) paste(x, collapse = "+"))
 
 # all the null model to fit
 to_test <- tibble(equ = equations,
-                  type = c(rep("single", 5), rep("mch", 26)),
+                  #type = c(rep("single", 7), rep("mch", 26)),
                   indices = indices) %>%
   mutate(null_indices = null_indices,
          null_terms = null_terms, 
@@ -35,6 +41,9 @@ to_test <- tibble(equ = equations,
          null_model = if_else(null_model == "", "1", null_model),
          indices_test = indices_test)
 
+
+to_test <- to_test %>%
+  mutate(indices_test_2 = ifelse(str_detect(equ, "X6"), c(indices_test, 8), indices_test))
 
 # full model --------------------------------------------------------------
 
@@ -56,17 +65,20 @@ full_model
 #a) fitted full model and b) null model specification/indices, and t
 # he outputs would be a data frame with the test results corresponding to that hypothesis. 
 
-get_wald <- function(model, indices_test, cov_mat, test){
-         
-  Wald_test(model, 
-            constraints = constrain_zero(indices_test), 
-            vcov = cov_mat,
-            test = test) %>%
+estimate_wald <- function(model, indices_test, cov_mat, test){
+  
+  res <- Wald_test(model, 
+                   constraints = constrain_zero(indices_test), 
+                   vcov = cov_mat,
+                   test = test) %>%
     select(test, p_val)
+  
+  return(res)
 }
 
-get_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"), test = "Naive-F")
-get_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"), test = "HTZ")
+
+estimate_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"), test = "Naive-F")
+estimate_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"), test = "HTZ")
 
 
 
@@ -75,8 +87,8 @@ get_wald(full_model, indices_test = 2, cov_mat = vcovCR(full_model, type = "CR1"
 cov_mat_cr1 <- vcovCR(full_model, type = "CR1")
 cov_mat_cr2 <- vcovCR(full_model, type = "CR2")
 
-system.time(naive_test <- map_dfr(to_test$indices_test, get_wald, model = full_model, cov_mat = cov_mat_cr1, test = "Naive-F"))
-system.time(htz_test <- map_dfr(to_test$indices_test, get_wald, model = full_model, cov_mat = cov_mat_cr2, test = "HTZ"))
+system.time(naive_test <- map_dfr(to_test$indices_test, estimate_wald, model = full_model, cov_mat = cov_mat_cr1, test = "Naive-F"))
+system.time(htz_test <- map_dfr(to_test$indices_test, estimate_wald, model = full_model, cov_mat = cov_mat_cr2, test = "HTZ"))
 
 naive_res <- bind_cols(to_test %>% select(equ, type), naive_test)
 htz_res <- bind_cols(to_test %>% select(equ, type), htz_test)
@@ -121,8 +133,8 @@ extract_stats <- function(mod, C, vcov_mat, method){
   
   Wald_test(mod, constraints = C, vcov = vcov_mat, test = "Naive-F") %>%
     as_tibble() %>%
-    mutate(type = method) %>%
-    select(type, Fstat)
+    mutate(test = method) %>%
+    select(test, Fstat)
 }
 
 
@@ -180,7 +192,7 @@ cwb <- function(dat, null_mod, full_mod = full_model, indices) {
   
   
   p_boot <- bootstraps %>%
-    group_by(type) %>%
+    group_by(test) %>%
     summarize(p_val = mean(Fstat > org_F)) %>%
     ungroup() 
   

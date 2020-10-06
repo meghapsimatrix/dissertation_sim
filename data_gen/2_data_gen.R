@@ -79,13 +79,45 @@ generate_es_num <- function(dat) {
 load("data/design_mat.Rdata")
 
 generate_rmeta <- function(m, tau, 
-                           rho, covs, beta,
+                           rho, covs, beta_type,
                            return_study_params = FALSE) {
+  
+
+  # mean es num and N -------------------------------------------------------
   
   k_mean <- 4
   N_mean <- 30
   nu <- 50
+  
+
+  # beta --------------------------------------------------------------------
+  
+  if(beta_type == "A") {
+    beta <- c(.3, 0, 0, 0, 0, 0, 0, 0)
+  } else if(beta_type == "B1"){
+    beta <- c(.3, .1, 0, 0, 0, 0, 0, 0)
+  } else if(beta_type == "B5"){
+    beta <- c(.3, .5, 0, 0, 0, 0, 0, 0)
+  } else if(beta_type == "C1"){
+    beta <- c(.3, 0, .1, 0, 0, 0, 0, 0)
+  } else if(beta_type == "C5"){
+    beta <- c(.3, 0, .5, 0, 0, 0, 0, 0)
+  } else if(beta_type == "D1"){
+    beta <- c(.3, 0, 0, .1, 0, 0, 0, 0)
+  } else if(beta_type == "D5"){
+    beta <- c(.3, 0, 0, .5, 0, 0, 0, 0)
+  } else if(beta_type == "E1"){
+    beta <- c(.3, 0, 0, 0, .1, 0, 0, 0)
+  } else if(beta_type == "E5"){
+    beta <- c(.3, 0, 0, 0, .5, 0, 0, 0)
+  } else if(beta_type == "F1"){
+    beta <- c(.3, 0, 0, 0, 0, .1, 0, 0)
+  } else if(beta_type == "F5"){
+    beta <- c(.3, 0, 0, 0, 0, .5, 0, 0)
+  } 
+  
   beta <- matrix(beta, nrow = 8)
+  
   
   # Design matrix -----------------------------------------------------------
   
@@ -162,7 +194,7 @@ meta_data <-
                  tau = 0.4, 
                  rho = 0.8, 
                  covs = design_mat,
-                 beta = c(1, .1, .5, .3, .6, .7, .6, .5))
+                 beta_type = "A")
 
 # generate meta data 
 set.seed(342020)
@@ -174,7 +206,7 @@ meta_data_params <-
                  tau = 0.4, 
                  rho = 0.8, 
                  covs = design_mat,
-                 beta = c(1, .1, .5, .3, .6, .7, .6, .5), 
+                 beta_type = "A", 
                  return_study_params = TRUE)
 
 check <- meta_data %>%
@@ -192,7 +224,7 @@ big_meta <-
                  tau = 0.1, 
                  rho = 0.8, 
                  covs = design_mat,
-                 beta = c(0.3, rep(0,7)),
+                 beta_type = "B1",
                  return_study_params = FALSE)
 
 mean(big_meta$var_g)
@@ -209,7 +241,7 @@ study_features <-
                  tau = 0.05, 
                  rho = 0.6, 
                  covs = design_mat,
-                 beta = c(0.3, rep(0, 7)),
+                 beta_type = "A",
                  return_study_params = TRUE)
 
 # check means of k, N, Psi
@@ -251,7 +283,7 @@ meta_data <-
                  tau = 0.05, 
                  rho = 0.6, 
                  covs = design_mat,
-                 beta = c(1, .1, .5, .3, .6, .7, .5, .6))
+                 beta_type = "F1")
 
 # save(meta_data, file = "data/meta_data_practice.Rdata")
 

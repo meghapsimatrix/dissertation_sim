@@ -139,10 +139,19 @@ generate_rmeta <- function(m, tau,
 #------------------------------------------------------
 
 
-estimate <- function(dat, design_params) {
-
-  return(results)
+estimate_wald <- function(model, indices_test, cov_mat, test){
+  
+  res <- Wald_test(model, 
+            constraints = constrain_zero(indices_test), 
+            vcov = cov_mat,
+            test = test) %>%
+    select(test, p_val)
+  
+  return(res)
 }
+
+
+
 
 # Test the estimation function
 
@@ -155,10 +164,10 @@ estimate <- function(dat, design_params) {
 calc_performance <- function(results, alpha) {
   
   performance_measures  <- results %>%
-    filter(!is.na(p_vals)) %>%
-    group_by(method) %>%
+    filter(!is.na(p_val)) %>%
+    group_by(test) %>%
     summarize(K = n(),
-              rej_rate = mean(p_vals < alpha),
+              rej_rate = mean(p_val < alpha),
               mcse = sqrt((rej_rate * (1 - rej_rate))/K))
 
   return(performance_measures)
@@ -171,16 +180,21 @@ calc_performance <- function(results, alpha) {
 #-----------------------------------------------------------
 
 run_sim <- function(iterations, model_params, design_params, seed = NULL) {
+  
   if (!is.null(seed)) set.seed(seed)
 
   results <-
     rerun(iterations, {
+      
       dat <- generate_rmeta(model_params)
-      estimate(dat, design_params)
+      naive_res <- map_dfr(to_test$indices_test, estimate_wald, model = full_model, cov_mat = cov_mat_cr1, test = "Naive-F")
+      htz_res <- map_dfr(to_test$indices_test, estimate_wald, model = full_model, cov_mat = cov_mat_cr2, test = "HTZ")
+      results <- bind_rows(naive_res, htz_res, boot_res)
+      
     }) %>%
     bind_rows()
 
-  calc_performance(results, model_params)
+  calc_performance(results, alpha)
 }
 
 # demonstrate the simulation driver
@@ -192,27 +206,27 @@ set.seed(20150316) # change this seed value!
 
 # now express the simulation parameters as vectors/lists
 
-beta <- enframe(list(c(.3, 0, 0, 0, 0, 0, 0, 0),
-                     c(.3, .1, 0, 0, 0, 0, 0, 0),
-                     c(.3, .5, 0, 0, 0, 0, 0, 0),
-                     c(.3, 0, .1, 0, 0, 0, 0, 0),
-                     c(.3, 0, .5, 0, 0, 0, 0, 0), 
-                     c(.3, 0, 0, .1, 0, 0, 0, 0), 
-                     c(.3, 0, 0, .5, 0, 0, 0, 0),
-                     c(.3, 0, 0, 0, .1, 0, 0, 0), 
-                     c(.3, 0, 0, 0, .5, 0, 0, 0),
-                     c(.3, 0, 0, 0, 0, .1, 0, 0), 
-                     c(.3, 0, 0, 0, 0, .5, 0, 0), 
-                     c(.3, 0, 0, 0, 0, 0, .1, 0),
-                     c(.3, 0, 0, 0, 0, 0, .5, 0), 
-                     c(.3, 0, 0, 0, 0, 0, 0, .1),
-                     c(.3, 0, 0, 0, 0, 0, 0, .5)))
+beta <- list(c(.3, 0, 0, 0, 0, 0, 0, 0),
+             c(.3, .1, 0, 0, 0, 0, 0, 0),
+             c(.3, .5, 0, 0, 0, 0, 0, 0),
+             c(.3, 0, .1, 0, 0, 0, 0, 0),
+             c(.3, 0, .5, 0, 0, 0, 0, 0), 
+             c(.3, 0, 0, .1, 0, 0, 0, 0), 
+             c(.3, 0, 0, .5, 0, 0, 0, 0),
+             c(.3, 0, 0, 0, .1, 0, 0, 0), 
+             c(.3, 0, 0, 0, .5, 0, 0, 0),
+             c(.3, 0, 0, 0, 0, .1, 0, 0), 
+             c(.3, 0, 0, 0, 0, .5, 0, 0), 
+             c(.3, 0, 0, 0, 0, 0, .1, 0),
+             c(.3, 0, 0, 0, 0, 0, .5, 0), 
+             c(.3, 0, 0, 0, 0, 0, 0, .1),
+             c(.3, 0, 0, 0, 0, 0, 0, .5))
 
 design_factors <- list(
-  m = list(10, 20, 40, 80), 
-  tau = list(0.1, 0.3),
-  rho = list(0.5, 0.8),
-  beta = beta$value
+  m = c(10, 20, 40, 80), 
+  tau = c(0.1, 0.3),
+  rho = c(0.5, 0.8),
+  beta_type = c("A", "B1", "B5", "C1", "C5", "D1", "D5", "E1", "E5", "F1", "F5", "G1", "G5", "H1", "H5")
   )
 
 # combine into a design set
