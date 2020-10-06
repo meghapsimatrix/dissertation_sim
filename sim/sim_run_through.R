@@ -57,13 +57,45 @@ generate_es_num <- function(dat) {
 load("data/design_mat.Rdata")
 
 generate_rmeta <- function(m, tau, 
-                           rho, covs, beta,
+                           rho, covs, beta_type,
                            return_study_params = FALSE) {
+  
+  
+  # mean es num and N -------------------------------------------------------
   
   k_mean <- 4
   N_mean <- 30
   nu <- 50
+  
+  
+  # beta --------------------------------------------------------------------
+  
+  if(beta_type == "A") {
+    beta <- c(.3, 0, 0, 0, 0, 0, 0, 0)
+  } else if(beta_type == "B1"){
+    beta <- c(.3, .1, 0, 0, 0, 0, 0, 0)
+  } else if(beta_type == "B5"){
+    beta <- c(.3, .5, 0, 0, 0, 0, 0, 0)
+  } else if(beta_type == "C1"){
+    beta <- c(.3, 0, .1, 0, 0, 0, 0, 0)
+  } else if(beta_type == "C5"){
+    beta <- c(.3, 0, .5, 0, 0, 0, 0, 0)
+  } else if(beta_type == "D1"){
+    beta <- c(.3, 0, 0, .1, 0, 0, 0, 0)
+  } else if(beta_type == "D5"){
+    beta <- c(.3, 0, 0, .5, 0, 0, 0, 0)
+  } else if(beta_type == "E1"){
+    beta <- c(.3, 0, 0, 0, .1, 0, 0, 0)
+  } else if(beta_type == "E5"){
+    beta <- c(.3, 0, 0, 0, .5, 0, 0, 0)
+  } else if(beta_type == "F1"){
+    beta <- c(.3, 0, 0, 0, 0, .1, 0, 0)
+  } else if(beta_type == "F5"){
+    beta <- c(.3, 0, 0, 0, 0, .5, 0, 0)
+  } 
+  
   beta <- matrix(beta, nrow = 8)
+  
   
   # Design matrix -----------------------------------------------------------
   
