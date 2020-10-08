@@ -79,44 +79,42 @@ generate_es_num <- function(dat) {
 load("data/design_mat.Rdata")
 
 generate_rmeta <- function(m, tau, 
-                           rho, covs, beta_type,
+                           rho, covs, 
+                           beta_type,
+                           k_mean = 4,
+                           N_mean = 30,
+                           nu = 50,
                            return_study_params = FALSE) {
   
-
-  # mean es num and N -------------------------------------------------------
   
-  k_mean <- 4
-  N_mean <- 30
-  nu <- 50
   
-
   # beta --------------------------------------------------------------------
   
   if(beta_type == "A") {
-    beta <- c(.3, 0, 0, 0, 0, 0, 0, 0)
+    beta <- c(.3, 0, 0, 0, 0, 0)
   } else if(beta_type == "B1"){
-    beta <- c(.3, .1, 0, 0, 0, 0, 0, 0)
+    beta <- c(.3, .1, 0, 0, 0, 0)
   } else if(beta_type == "B5"){
-    beta <- c(.3, .5, 0, 0, 0, 0, 0, 0)
+    beta <- c(.3, .5, 0, 0, 0, 0)
   } else if(beta_type == "C1"){
-    beta <- c(.3, 0, .1, 0, 0, 0, 0, 0)
+    beta <- c(.3, 0, .1, 0, 0, 0)
   } else if(beta_type == "C5"){
-    beta <- c(.3, 0, .5, 0, 0, 0, 0, 0)
+    beta <- c(.3, 0, .5, 0, 0, 0)
   } else if(beta_type == "D1"){
-    beta <- c(.3, 0, 0, .1, 0, 0, 0, 0)
+    beta <- c(.3, 0, 0, .1, 0, 0)
   } else if(beta_type == "D5"){
-    beta <- c(.3, 0, 0, .5, 0, 0, 0, 0)
+    beta <- c(.3, 0, 0, .5, 0, 0)
   } else if(beta_type == "E1"){
-    beta <- c(.3, 0, 0, 0, .1, 0, 0, 0)
+    beta <- c(.3, 0, 0, 0, .1, 0)
   } else if(beta_type == "E5"){
-    beta <- c(.3, 0, 0, 0, .5, 0, 0, 0)
+    beta <- c(.3, 0, 0, 0, .5, 0)
   } else if(beta_type == "F1"){
-    beta <- c(.3, 0, 0, 0, 0, .1, 0, 0)
+    beta <- c(.3, 0, 0, 0, 0, .1)
   } else if(beta_type == "F5"){
-    beta <- c(.3, 0, 0, 0, 0, .5, 0, 0)
+    beta <- c(.3, 0, 0, 0, 0, .5)
   } 
   
-  beta <- matrix(beta, nrow = 8)
+  beta <- matrix(beta, nrow = 6)
   
   
   # Design matrix -----------------------------------------------------------
@@ -182,6 +180,7 @@ generate_rmeta <- function(m, tau,
   
   return(meta_cov_dat)
 }
+
 
 
 # generate meta data 
@@ -294,18 +293,3 @@ V_mat <- impute_covariance_matrix(vi = meta_data$var_g,
 
 
 
-beta <- list(c(.3, 0, 0, 0, 0, 0, 0, 0),
-             c(.3, .1, 0, 0, 0, 0, 0, 0),
-             c(.3, .5, 0, 0, 0, 0, 0, 0),
-             c(.3, 0, .1, 0, 0, 0, 0, 0),
-             c(.3, 0, .5, 0, 0, 0, 0, 0), 
-             c(.3, 0, 0, .1, 0, 0, 0, 0), 
-             c(.3, 0, 0, .5, 0, 0, 0, 0),
-             c(.3, 0, 0, 0, .1, 0, 0, 0), 
-             c(.3, 0, 0, 0, .5, 0, 0, 0),
-             c(.3, 0, 0, 0, 0, .1, 0, 0), 
-             c(.3, 0, 0, 0, 0, .5, 0, 0), 
-             c(.3, 0, 0, 0, 0, 0, .1, 0),
-             c(.3, 0, 0, 0, 0, 0, .5, 0), 
-             c(.3, 0, 0, 0, 0, 0, 0, .1),
-             c(.3, 0, 0, 0, 0, 0, 0, .5))
