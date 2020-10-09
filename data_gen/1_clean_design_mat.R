@@ -10,10 +10,10 @@ design_mat <- read_csv("data/design_matrix.csv") %>%
   select(X, everything())
 
 # merge it on study level
-design_mat$X6 <- sample(c(rep("A", 8), rep("B", 8), rep("C", 4)))
+#design_mat$X6 <- sample(c(rep("A", 8), rep("B", 8), rep("C", 4)))
 
-design_mat <- dummy_cols(design_mat, select_columns = "X6") %>%
-  select(-c(X6_A, X6))
+#design_mat <- dummy_cols(design_mat, select_columns = "X6") %>%
+#  select(-c(X6_A, X6))
 
 glimpse(design_mat)
 

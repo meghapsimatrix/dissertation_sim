@@ -108,7 +108,6 @@ fit_mod <- function(equation, dat = meta_data) {
 }
 
 params <- tibble(equation = paste("g ~ ", to_test$null_model)) 
-  
 system.time(null_mods <- map(params$equation, fit_mod))
 
 
