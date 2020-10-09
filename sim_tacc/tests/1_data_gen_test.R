@@ -117,6 +117,6 @@ V_mat <- impute_covariance_matrix(vi = meta_data$var_g,
                                   r = 0.6)
 
 
-V_mat
+head(V_mat)
 
 

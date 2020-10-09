@@ -55,9 +55,11 @@ cwb_params <- test_dat %>%
   mutate(null_mod = null_mods) %>%
   select(null_mod, indices_test)
 
-boot_res <- pmap_dfr(cwb_params[1:2, ], cwb)
+boot_res <- pmap_dfr(cwb_params[1:2, ], cwb)  # just doing two boots
 
-res <- bind_cols(naive_res, htz_res) %>%
+boot_res_2 <- pmap_dfr(cwb_params[20, ], cwb) # checking mch
+
+res <- bind_cols(naive_res, htz_res) %>%  # the one on run_sim includes boot_res, here just to check
   bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
   gather(test, p_val, -c(cov_test, contrasts))
 
