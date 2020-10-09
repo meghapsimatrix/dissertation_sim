@@ -4,14 +4,18 @@
 # to do this as part of the simulation driver.)
 #------------------------------------------------------
 
-calc_performance <- function(results, alpha) {
+calc_performance <- function(results) {
   
   performance_measures  <- results %>%
     filter(!is.na(p_val)) %>%
-    group_by(test) %>%
+    group_by(contrasts, test) %>%
     summarize(K = n(),
-              rej_rate = mean(p_val < alpha),
-              mcse = sqrt((rej_rate * (1 - rej_rate))/K))
-  
+              rej_rate_05 = mean(p_val < .05),
+              mcse_05 = sqrt((rej_rate_05 * (1 - rej_rate_05))/K),
+              rej_rate_01 = mean(p_val < .01),
+              mcse_01 = sqrt((rej_rate_01 * (1 - rej_rate_01))/K),
+              rej_rate_10 = mean(p_val < .10),
+              mcse_10 = sqrt((rej_rate_10 * (1 - rej_rate_10))/K))
+
   return(performance_measures)
 }

@@ -284,12 +284,11 @@ meta_data <-
                  covs = design_mat,
                  beta_type = "F1")
 
-# save(meta_data, file = "data/meta_data_practice.Rdata")
 
 # Use clubSandwich::impute_covariance_matrix with true rho.
 V_mat <- impute_covariance_matrix(vi = meta_data$var_g, 
                                   cluster = meta_data$study, 
                                   r = 0.6)
 
-
+head(V_mat)
 

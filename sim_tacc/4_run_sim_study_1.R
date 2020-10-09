@@ -3,22 +3,59 @@ library(purrr)
 library(mvtnorm)
 library(robumeta)
 library(clubSandwich)
+library(tidyr)
 
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
+load("data/to_test.Rdata")
 
 #-----------------------------------------------------------
 # Source the functions
 #-----------------------------------------------------------
 
 source("1_data_gen_study_1.R")
+source("2_estimation_study_1.R")
 source("3_performance_criteria.R")
 
 #-----------------------------------------------------------
 # Simulation Driver - should return a data.frame or tibble
 #-----------------------------------------------------------
 
-run_sim <- function(iterations, model_params, design_params, seed = NULL) {
+# add to test as an argument? 
+
+run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed = NULL) {
+  
+  if (beta_type %in% c("B1", "B5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X1"))
+    
+  } else if(beta_type %in% c("C1", "C5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X2"))
+  
+  } else if(beta_type %in% c("D1", "D5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X3"))
+    
+  } else if(beta_type %in% c("E1", "E5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X4"))
+    
+  } else if(beta_type %in% c("F1", "F5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X5"))
+    
+  } else if(beta_type == "A" ){
+    
+    test_dat <- test_dat 
+    
+  } 
+  
   
   if (!is.null(seed)) set.seed(seed)
   
@@ -27,7 +64,7 @@ run_sim <- function(iterations, model_params, design_params, seed = NULL) {
       
 
       # generate data ------------------------------------------------------------
-      meta_data <- generate_rmeta(model_params)
+      meta_data <- generate_rmeta(m, tau, rho, beta_type)
       
 
       # Fit full model on data --------------------------------------------------
@@ -46,44 +83,37 @@ run_sim <- function(iterations, model_params, design_params, seed = NULL) {
       
       # get naive and htz -------------------------------------------------------
       
-      naive_res <- map_dfr(to_test$indices_test,
+      naive_res <- map_dfr(test_dat$indices_test,
                            estimate_wald, 
                            model = full_model, 
                            cov_mat = cov_mat_cr1, 
                            test = "Naive-F")
       
       
-      htz_res <-  map_dfr(to_test$indices_test,
+      htz_res <-  map_dfr(test_dat$indices_test,
                           estimate_wald, 
                           model = full_model, 
                           cov_mat = cov_mat_cr2, 
                           test = "HTZ")
-      
 
       # cwb ---------------------------------------------------------------------
 
-      null_mods <- map(to_test$null_model, fit_mod)
+      null_mods <- map(test_dat$null_model, fit_mod)
       
-      cwb_params <- to_test %>%
+      cwb_params <- test_dat %>%
         mutate(null_mod = null_mods) %>%
         select(null_mod, indices_test)
       
       boot_res <- pmap_dfr(cwb_params, cwb)
       
-      cwb_res <- boot_res %>%
-        filter(test == "CWB") 
-      
-      cwb_a_res <- boot_res %>%
-        filter(test == "CWB Adjusted") 
-      
-      res <- bind_cols(naive_res, htz_res, cwb_res, cwb_a_res) %>%
-        bind_cols(to_test %>% select(cov_test)) %>%
-        gather(test, p_val, -cov_test)
+      res <- bind_cols(naive_res, htz_res, boot_res) %>%
+        bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
+        gather(test, p_val, -c(cov_test, contrasts))
       
     }) %>%
     bind_rows()
   
-  calc_performance(results, alpha)
+  calc_performance(res)
 }
 
 # demonstrate the simulation driver

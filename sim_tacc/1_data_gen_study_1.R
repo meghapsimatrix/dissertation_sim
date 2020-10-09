@@ -41,11 +41,11 @@ generate_es_num <- function(dat) {
 }
 
 
-# Tipton Pusto design matrix cleaned - clean_design_mat.R
-load("data/design_mat.Rdata")
+
 
 generate_rmeta <- function(m, tau, 
-                           rho, covs, 
+                           rho, 
+                           covs = design_mat, 
                            beta_type,
                            k_mean = 4,
                            N_mean = 30,
