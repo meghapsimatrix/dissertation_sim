@@ -21,9 +21,11 @@ source("3_performance_criteria.R")
 # Simulation Driver - should return a data.frame or tibble
 #-----------------------------------------------------------
 
-# add to test as an argument? 
+# JEP: It might be easier to pare down the test_dat outside of this function,
+#      as part of the design for the power sims. Then you could nest() the 
+#      test_dat and pass it as an argument.
 
-run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed = NULL) {
+run_sim <- function(iterations, m, tau, rho, beta_type, design_matrix, test_dat = to_test, R, boot_seed, seed = NULL) {
   
 
   # non zero betas only for power -------------------------------------------
@@ -53,7 +55,7 @@ run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed
     test_dat <- test_dat %>%
       filter(str_detect(cov_test, "X5"))
         
-  } else if(beta_type == "A" ){
+  } else if (beta_type == "A" ){
         
     test_dat <- test_dat 
         
@@ -61,15 +63,15 @@ run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed
       
     
   if (!is.null(seed)) set.seed(seed)
-      
+  
+
+  
   results <-
-    rerun(iterations, {
+    map_dfr(1:iterations, {
         
-
       # generate data ------------------------------------------------------------
-      meta_data <- generate_rmeta(m, tau, rho, beta_type)
+      meta_data <- generate_rmeta(m = m, tau = tau, rho = rho, beta_type = beta_type)
       
-
       # Fit full model on data --------------------------------------------------
       full_formula <- "g ~ X1 + X2 + X3 + X4 + X5"
       full_model <- robu(as.formula(full_formula), 
@@ -78,13 +80,14 @@ run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed
                          small = FALSE,
                          data = meta_data)
       
-
       # get cov matrices --------------------------------------------------------
-
       cov_mat_cr1 <- vcovCR(full_model, type = "CR1")
       cov_mat_cr2 <- vcovCR(full_model, type = "CR2")
       
       # get naive and htz -------------------------------------------------------
+      
+      # JEP: This can take advantage of the mapping features built-in to Wald_test()
+      #      See comments in tests/2_est_perf_test.R
       
       naive_res <- map_dfr(test_dat$indices_test,
                            estimate_wald, 
@@ -100,7 +103,9 @@ run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed
                           test = "HTZ")
 
       # cwb ---------------------------------------------------------------------
-
+      # JEP: See suggestions in 2_estimation_study_1.R regarding fitting the null
+      #      Model inside of cwb().
+      
       null_mods <- map(test_dat$null_model, fit_mod)
       
       cwb_params <- test_dat %>%
@@ -109,12 +114,12 @@ run_sim <- function(iterations, m, tau, rho, beta_type, test_dat = to_test, seed
       
       boot_res <- pmap_dfr(cwb_params, cwb)
       
-      res <- bind_cols(naive_res, htz_res, boot_res) %>%
+      res <- 
+        bind_cols(naive_res, htz_res, boot_res) %>%
         bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
         gather(test, p_val, -c(cov_test, contrasts))
       
-    }) %>%
-    bind_rows()
+    }) 
   
   calc_performance(res)
 }

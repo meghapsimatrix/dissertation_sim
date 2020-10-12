@@ -40,12 +40,33 @@ naive_res <- map_dfr(test_dat$indices_test,
                      cov_mat = cov_mat_cr1, 
                      test = "Naive-F")
 
+naive_res$`Naive-F`
+
+# JEP: Another way to do the same thing
+
+names(test_dat$indices_test) <- test_dat$cov_test
+Wald_test(full_model, 
+          constraints = constrain_zero(test_dat$indices_test),
+          vcov = cov_mat_cr1,
+          test = "Naive-F", 
+          tidy = TRUE)
+
 
 htz_res <-  map_dfr(test_dat$indices_test,
                     estimate_wald, 
                     model = full_model, 
                     cov_mat = cov_mat_cr2, 
                     test = "HTZ")
+htz_res$HTZ
+
+# JEP: Another way to do the same thing
+
+Wald_test(full_model, 
+          constraints = constrain_zero(test_dat$indices_test),
+          vcov = cov_mat_cr2,
+          test = "HTZ", 
+          tidy = TRUE)
+
 
 # cwb ---------------------------------------------------------------------
 
@@ -65,3 +86,21 @@ res <- bind_cols(naive_res, htz_res) %>%  # the one on run_sim includes boot_res
 
 
 calc_performance(res)
+
+
+
+# JEP scratch ---------------------------------------------------------
+test <- 20
+dat <- meta_data
+null_mod <- null_mods[[test]]
+full_mod <- full_model
+indices_test <- test_dat$indices_test[[test]]
+
+
+iterations <- 4
+m <- 20
+tau <- 0.1
+rho <- 0.6
+beta_type <- "A"
+test_dat <- to_test[1:3,]
+seed <- NULL

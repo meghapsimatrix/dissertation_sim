@@ -4,9 +4,9 @@
 
 
 
-# estimte the wald --------------------------------------------------------
+# estimate the wald --------------------------------------------------------
 
-estimate_wald <- function(model, indices_test, cov_mat, test){
+estimate_wald <- function(model, indices_test, cov_mat, test) {
   
   res <- Wald_test(model, 
                    constraints = constrain_zero(indices_test), 
@@ -23,7 +23,7 @@ estimate_wald <- function(model, indices_test, cov_mat, test){
 
 # estimate null -----------------------------------------------------------
 
-fit_mod <- function(equation, dat = meta_data) {
+fit_mod <- function(equation, dat) {
   
   robu(as.formula(equation), 
        studynum = study, 
@@ -36,7 +36,7 @@ fit_mod <- function(equation, dat = meta_data) {
 
 # run the cwb -------------------------------------------------------------
 
-change_to_mat <- function(res){
+change_to_mat <- function(res) {
   
   as.matrix(res)
   
@@ -49,7 +49,7 @@ mult_mat <- function(x, y) {
 }
 
 
-extract_stats <- function(mod, C, vcov_mat, method){
+extract_stats <- function(mod, C, vcov_mat, method) {
   
   Wald_test(mod, constraints = C, vcov = vcov_mat, test = "Naive-F") %>%
     as_tibble() %>%
@@ -58,8 +58,11 @@ extract_stats <- function(mod, C, vcov_mat, method){
 }
 
 
-cwb <- function(dat = meta_data, null_mod, full_mod = full_model, indices_test) {
+
+
+cwb <- function(dat, null_model, full_mod, R, boot_seed, indices_test) {
   
+  null_mod <- fit_mod(null_model, data = dat)
   
   # residuals and transformed residuals -------------------------------------
   
@@ -76,11 +79,11 @@ cwb <- function(dat = meta_data, null_mod, full_mod = full_model, indices_test) 
   num_studies <- unique(dat$study)
   k_j <- as.numeric(table(dat$study))
   
-  set.seed(8062020)
+  set.seed(boot_seed)
   
   system.time(
     
-    bootstraps <- rerun(.n = 399, {
+    bootstraps <- rerun(.n = R, {
       
       wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
       dat$eta <- rep(wts, k_j)
@@ -110,7 +113,8 @@ cwb <- function(dat = meta_data, null_mod, full_mod = full_model, indices_test) 
     pull(Fstat)
   
   
-  p_boot <- bootstraps %>%
+  p_boot <- 
+    bootstraps %>%
     group_by(test) %>%
     summarize(p_val = mean(Fstat > org_F)) %>%
     ungroup() %>%

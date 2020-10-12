@@ -2,6 +2,8 @@
 # Data Generating Model
 #------------------------------------------------------
 
+
+
 generate_rsmd <- function(delta, k, N, Psi) {
   
   # make sure delta is a vector
@@ -20,7 +22,7 @@ generate_rsmd <- function(delta, k, N, Psi) {
   # SMD
   d <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
   J <- (1 - (3/((4 * (N - 2)) - 1)))
-  g <- d * (1 - (3/((4 * (N - 2)) - 1))) # hedges g
+  g <- d * J # hedges g
   var_g <- J^2 * (4 / N + d^2 / (2 * (N - 2)))
   
   dat <- tibble(g = g, var_g = var_g)
@@ -43,10 +45,11 @@ generate_es_num <- function(dat) {
 
 
 
-generate_rmeta <- function(m, tau, 
+generate_rmeta <- function(m, 
+                           tau, 
                            rho, 
-                           covs = design_mat, 
-                           beta_type,
+                           covs, 
+                           beta_type = "A",
                            k_mean = 4,
                            N_mean = 30,
                            nu = 50,
@@ -135,10 +138,11 @@ generate_rmeta <- function(m, tau,
   
   if (return_study_params) return(study_data)
   
-  # Generate fulll meta data  -----------------------------------------------
+  # Generate full meta data  -----------------------------------------------
   
   # first line runs generate_rsmd
-  meta_cov_dat <- pmap_df(study_data, generate_rsmd, .id = "study") %>%
+  meta_cov_dat <- 
+    pmap_df(study_data, generate_rsmd, .id = "study") %>%
     mutate(study = as.numeric(study)) %>% # have to do study and es_num here again to join the covs
     generate_es_num() %>%
     left_join(design_mat_all, by = c("study", "es_num"))

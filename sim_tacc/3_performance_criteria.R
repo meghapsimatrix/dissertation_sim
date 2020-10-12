@@ -6,7 +6,8 @@
 
 calc_performance <- function(results) {
   
-  performance_measures  <- results %>%
+  performance_measures <- 
+    results %>%
     filter(!is.na(p_val)) %>%
     group_by(contrasts, test) %>%
     summarize(K = n(),

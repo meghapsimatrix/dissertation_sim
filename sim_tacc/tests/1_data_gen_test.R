@@ -112,6 +112,7 @@ meta_data <-
 # save(meta_data, file = "data/meta_data_practice.Rdata")
 
 # Use clubSandwich::impute_covariance_matrix with true rho.
+
 V_mat <- impute_covariance_matrix(vi = meta_data$var_g, 
                                   cluster = meta_data$study, 
                                   r = 0.6)
