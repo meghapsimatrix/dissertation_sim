@@ -25,7 +25,7 @@ source("3_performance_criteria.R")
 #      as part of the design for the power sims. Then you could nest() the 
 #      test_dat and pass it as an argument.
 
-run_sim <- function(iterations, m, tau, rho, beta_type, design_matrix, test_dat = to_test, R, boot_seed, seed = NULL) {
+run_sim <- function(iterations, m, tau, rho, beta_type, R, boot_seed, design_matrix = design_mat, test_dat = to_test, seed = NULL) {
   
 
   # non zero betas only for power -------------------------------------------
@@ -103,14 +103,8 @@ run_sim <- function(iterations, m, tau, rho, beta_type, design_matrix, test_dat 
                           test = "HTZ")
 
       # cwb ---------------------------------------------------------------------
-      # JEP: See suggestions in 2_estimation_study_1.R regarding fitting the null
-      #      Model inside of cwb().
-      
-      null_mods <- map(test_dat$null_model, fit_mod)
-      
       cwb_params <- test_dat %>%
-        mutate(null_mod = null_mods) %>%
-        select(null_mod, indices_test)
+        select(null_model, indices_test)
       
       boot_res <- pmap_dfr(cwb_params, cwb)
       

@@ -60,9 +60,9 @@ extract_stats <- function(mod, C, vcov_mat, method) {
 
 
 
-cwb <- function(dat, null_mod, full_mod, R, boot_seed, indices_test) {
+cwb <- function(dat, null_model, full_mod, R, boot_seed, indices_test) {
   
-  # null_mod <- fit_mod(null_model, data = dat)
+  ull_mod <- fit_mod(null_model, data = dat)
   
   # residuals and transformed residuals -------------------------------------
   
