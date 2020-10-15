@@ -4,23 +4,23 @@
 
 
 
-generate_rsmd <- function(delta, k, N, Psi) {
+generate_rsmd <- function(delta, k, N, Sigma) {
   
   # make sure delta is a vector
   delta_vec <- rep(delta, length.out = k)
   
-  # create Psi matrix assuming equicorrelation
-  if (!is.matrix(Psi)) Psi <- Psi + diag(1 - Psi, nrow = k) # cor matrix for 1 study
+  # create Sigma matrix assuming equicorrelation
+  if (!is.matrix(Sigma)) Sigma <- Sigma + diag(1 - Sigma, nrow = k) # cor matrix for 1 study
   
   # generate numerator of SMD 
-  meandiff <- rmvnorm(n = 1, mean = delta_vec, sigma = (4/N) * Psi) 
+  mean_diff <- rmvnorm(n = 1, mean = delta_vec, sigma = (4/N) * Sigma) 
   
   # covariance 
-  cov_mat <- as.matrix(rWishart(n = 1, df = N - 2, Sigma = Psi)[,,1])
+  cov_mat <- as.matrix(rWishart(n = 1, df = N - 2, Sigma = Sigma)[,,1])
   sigma_sq <- diag(cov_mat) / (N - 2)
   
   # SMD
-  d <- as.vector(meandiff / sqrt(sigma_sq))  # cohen's d 
+  d <- as.vector(mean_diff / sqrt(sigma_sq))  # cohen's d 
   J <- (1 - (3/((4 * (N - 2)) - 1)))
   g <- d * J # hedges g
   var_g <- J^2 * (4 / N + d^2 / (2 * (N - 2)))
@@ -108,7 +108,7 @@ generate_rmeta <- function(m,
     tibble(
       k = pmin(1 + rpois(m, k_mean), 10), # look at some meta analysis 
       N = pmin(20 + 2 * rpois(m, N_mean), 200), # distribution of sample size 
-      Psi = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
+      Sigma = rbeta(m, rho * nu, (1 - rho) * nu) # you have to make something up 
     ) %>%
     mutate(study = 1:m)
   
