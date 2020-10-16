@@ -25,11 +25,12 @@ source("3_performance_criteria.R")
 #      as part of the design for the power sims. Then you could nest() the 
 #      test_dat and pass it as an argument.
 
-<<<<<<< HEAD
-run_sim <- function(iterations, m, tau, rho, beta_type, R, full_form = "g ~ X1 + X2 + X3 + X4 + X5", design_matrix = design_mat, test_dat = to_test, seed = NULL) {
-=======
-run_sim <- function(iterations, m, tau, rho, beta_type, R, design_matrix = design_mat, test_dat = to_test, seed = NULL) {
->>>>>>> 91f801dca3735b650e28946180adf284c825cc02
+
+run_sim <- function(iterations, m, tau, rho, beta_type, R, 
+                    full_form = "g ~ X1 + X2 + X3 + X4 + X5", 
+                    design_matrix = design_mat, 
+                    test_dat = to_test, 
+                    seed = NULL) {
   
 
   # non zero betas only for power -------------------------------------------
@@ -64,16 +65,8 @@ run_sim <- function(iterations, m, tau, rho, beta_type, R, design_matrix = desig
     test_dat <- test_dat 
         
   } 
-  
-<<<<<<< HEAD
-=======
-  set.seed(20201020)
-  
-  test_dat <- test_dat %>%
-    mutate(beta_seed = round(runif(1) * 2^30) + 1:n())
       
     
->>>>>>> 91f801dca3735b650e28946180adf284c825cc02
   if (!is.null(seed)) set.seed(seed)
   
   test_dat <- test_dat %>%
@@ -119,11 +112,9 @@ run_sim <- function(iterations, m, tau, rho, beta_type, R, design_matrix = desig
 
       # cwb ---------------------------------------------------------------------
       cwb_params <- test_dat %>%
-<<<<<<< HEAD
         select(null_model, indices_test, R, boot_seed)
-=======
         select(null_model, indices_test, beta_seed)
->>>>>>> 91f801dca3735b650e28946180adf284c825cc02
+
       
       boot_res <- pmap_dfr(cwb_params, cwb)
       
