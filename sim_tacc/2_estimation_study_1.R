@@ -3,37 +3,6 @@
 #------------------------------------------------------
 
 
-
-# estimate the wald --------------------------------------------------------
-
-estimate_wald <- function(model, indices_test, cov_mat, test) {
-  
-  res <- Wald_test(model, 
-                   constraints = constrain_zero(indices_test), 
-                   vcov = cov_mat,
-                   test = test) %>%
-    select(p_val)
-  
-  names(res) <- test
-  
-  return(res)
-}
-
-
-
-# estimate null -----------------------------------------------------------
-
-fit_mod <- function(equation, dat) {
-  
-  robu(as.formula(equation), 
-       studynum = study, 
-       var.eff.size = var_g,
-       small = FALSE,
-       data = dat)
-  
-}
-
-
 # run the cwb -------------------------------------------------------------
 
 change_to_mat <- function(res) {
@@ -62,7 +31,11 @@ extract_stats <- function(mod, C, vcov_mat, method) {
 
 cwb <- function(dat, null_model, R, boot_seed, indices_test) {
   
-  null_mod <- fit_mod(null_model, data = dat)
+  null_mod <- robu(as.formula(null_model), 
+                   studynum = study, 
+                   var.eff.size = var_g,
+                   small = FALSE,
+                   data = dat)
   
   # residuals and transformed residuals -------------------------------------
   
