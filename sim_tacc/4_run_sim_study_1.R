@@ -25,7 +25,7 @@ source("3_performance_criteria.R")
 #      as part of the design for the power sims. Then you could nest() the 
 #      test_dat and pass it as an argument.
 
-run_sim <- function(iterations, m, tau, rho, beta_type, R, boot_seed, design_matrix = design_mat, test_dat = to_test, seed = NULL) {
+run_sim <- function(iterations, m, tau, rho, beta_type, R, full_form = "g ~ X1 + X2 + X3 + X4 + X5", design_matrix = design_mat, test_dat = to_test, seed = NULL) {
   
 
   # non zero betas only for power -------------------------------------------
@@ -60,10 +60,12 @@ run_sim <- function(iterations, m, tau, rho, beta_type, R, boot_seed, design_mat
     test_dat <- test_dat 
         
   } 
-      
-    
+  
   if (!is.null(seed)) set.seed(seed)
   
+  test_dat <- test_dat %>%
+    mutate(boot_seed = round(runif(1) * 2^30) + 1:n())
+      
 
   
   results <-
@@ -73,7 +75,7 @@ run_sim <- function(iterations, m, tau, rho, beta_type, R, boot_seed, design_mat
       meta_data <- generate_rmeta(m = m, tau = tau, rho = rho, beta_type = beta_type)
       
       # Fit full model on data --------------------------------------------------
-      full_formula <- "g ~ X1 + X2 + X3 + X4 + X5"
+      full_formula <- full_form
       full_model <- robu(as.formula(full_formula), 
                          studynum = study, 
                          var.eff.size = var_g,
@@ -85,26 +87,26 @@ run_sim <- function(iterations, m, tau, rho, beta_type, R, boot_seed, design_mat
       cov_mat_cr2 <- vcovCR(full_model, type = "CR2")
       
       # get naive and htz -------------------------------------------------------
-      
-      # JEP: This can take advantage of the mapping features built-in to Wald_test()
-      #      See comments in tests/2_est_perf_test.R
-      
-      naive_res <- map_dfr(test_dat$indices_test,
-                           estimate_wald, 
-                           model = full_model, 
-                           cov_mat = cov_mat_cr1, 
-                           test = "Naive-F")
+      names(test_dat$indices_test) <- test_dat$cov_test
+      naive_res <- Wald_test(full_model, 
+                             constraints = constrain_zero(test_dat$indices_test),
+                             vcov = cov_mat_cr1,
+                             test = "Naive-F", 
+                             tidy = TRUE) %>%
+        select(`Naive-F` = p_val)
       
       
-      htz_res <-  map_dfr(test_dat$indices_test,
-                          estimate_wald, 
-                          model = full_model, 
-                          cov_mat = cov_mat_cr2, 
-                          test = "HTZ")
+      htz_res <- Wald_test(full_model, 
+                           constraints = constrain_zero(test_dat$indices_test),
+                           vcov = cov_mat_cr2,
+                           test = "HTZ", 
+                           tidy = TRUE) %>%
+        select(HTZ = p_val)
+      
 
       # cwb ---------------------------------------------------------------------
       cwb_params <- test_dat %>%
-        select(null_model, indices_test)
+        select(null_model, indices_test, R, boot_seed)
       
       boot_res <- pmap_dfr(cwb_params, cwb)
       
