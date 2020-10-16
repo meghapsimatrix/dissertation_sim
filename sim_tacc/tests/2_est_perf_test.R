@@ -42,12 +42,6 @@ naive_res <- Wald_test(full_model,
                        tidy = TRUE) %>%
   select(`Naive-F` = p_val)
 
-naive_res <- map_dfr(test_dat$indices_test,
-                     estimate_wald, 
-                     model = full_model, 
-                     cov_mat = cov_mat_cr1, 
-                     test = "Naive-F")
-
 
 htz_res <-  Wald_test(full_model, 
                       constraints = constrain_zero(test_dat$indices_test),
@@ -66,14 +60,15 @@ test_dat <- test_dat %>%
 cwb_params <- test_dat %>%
   select(null_model, R, boot_seed, indices_test)
 
-boot_res <- pmap_dfr(cwb_params, cwb)
+boot_res <- pmap_dfr(cwb_params[1:2, ], cwb)  # something is wrong
 
 res <- 
-  bind_cols(naive_res, htz_res, boot_res) %>%
+  bind_cols(naive_res, htz_res) %>%
   bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
   gather(test, p_val, -c(cov_test, contrasts))
 
 
+calc_performance(res)
 
 
 
