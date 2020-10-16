@@ -24,6 +24,7 @@ meta_data <-
   generate_rmeta(m = 80, 
                  tau = 0.4, 
                  rho = 0.8, 
+                 covs = design_mat,
                  beta_type = "A")
 
 # generate meta data 
@@ -35,6 +36,7 @@ meta_data_params <-
   generate_rmeta(m = 80, 
                  tau = 0.4, 
                  rho = 0.8, 
+                 covs = design_mat,
                  beta_type = "A", 
                  return_study_params = TRUE)
 
@@ -50,6 +52,7 @@ big_meta <-
   generate_rmeta(m = 1000, 
                  tau = 0.1, 
                  rho = 0.8, 
+                 covs = design_mat,
                  beta_type = "B1",
                  return_study_params = FALSE)
 
@@ -66,6 +69,7 @@ study_features <-
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
                  rho = 0.6, 
+                 covs = design_mat,
                  beta_type = "A",
                  return_study_params = TRUE)
 
@@ -73,10 +77,10 @@ study_features <-
 
 hist(study_features$k)
 hist(study_features$N)
-hist(study_features$Psi)
+hist(study_features$Sigma)
 
 
-sd(study_features$Psi) # Should be sqrt(rho (1 - rho) / nu)
+sd(study_features$Sigma) # Should be sqrt(rho (1 - rho) / nu)
 sqrt(0.6 * 0.4 / 50)
 
 
@@ -107,9 +111,10 @@ meta_data <-
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
                  rho = 0.6, 
+                 covs = design_mat,
                  beta_type = "F1")
 
-# save(meta_data, file = "data/meta_data_practice.Rdata")
+save(meta_data, file = "data/meta_data_practice.Rdata")
 
 # Use clubSandwich::impute_covariance_matrix with true rho.
 
