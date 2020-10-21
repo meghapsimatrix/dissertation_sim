@@ -29,13 +29,23 @@ extract_stats <- function(mod, C, vcov_mat, method) {
 
 
 
-cwb <- function(null_model, indices_test, dat = meta_data, R = 399, full_mod_form = "X1 + X2 + X3 + X4 + X5") {
+cwb <- function(null_model, 
+                indices_test, 
+                dat = meta_data, 
+                R = 399, 
+                full_form = "X1 + X2 + X3 + X4 + X5") {
   
   null_mod <- robu(as.formula(null_model), 
                    studynum = study, 
                    var.eff.size = var_g,
                    small = FALSE,
                    data = dat)
+  
+  full_mod_org <- robu(as.formula(paste("g ~", full_form)), 
+                       studynum = study, 
+                       var.eff.size = var_g,
+                       small = FALSE,
+                       data = dat)
   
   # residuals and transformed residuals -------------------------------------
   
@@ -61,13 +71,13 @@ cwb <- function(null_model, indices_test, dat = meta_data, R = 399, full_mod_for
       dat$new_t <- with(dat, pred + res * eta)
       dat$new_t_adj <- with(dat, pred + t_res * eta)
       
-      full_mod <- robu(as.formula(paste("new_t ~", full_mod_form)), 
+      full_mod <- robu(as.formula(paste("new_t ~", full_form)), 
                        studynum = study, 
                        var.eff.size = var_g,
                        small = FALSE,
                        data = dat)
       
-      full_mod_adj <- robu(as.formula(paste("new_t_adj ~", full_mod_form)), 
+      full_mod_adj <- robu(as.formula(paste("new_t_adj ~", full_form)), 
                            studynum = study, 
                            var.eff.size = var_g,
                            small = FALSE,
@@ -87,9 +97,9 @@ cwb <- function(null_model, indices_test, dat = meta_data, R = 399, full_mod_for
     
   )
   
-  org_F <- Wald_test(full_mod, 
+  org_F <- Wald_test(full_mod_org, 
                      constraints = constrain_zero(indices_test), 
-                     vcov = vcovCR(full_mod, type = "CR1"),
+                     vcov = vcovCR(full_mod_org, type = "CR1"),
                      test = "Naive-F") %>%
     pull(Fstat)
   
@@ -105,4 +115,5 @@ cwb <- function(null_model, indices_test, dat = meta_data, R = 399, full_mod_for
   return(p_boot)
   
 }
+
 

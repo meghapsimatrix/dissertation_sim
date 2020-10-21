@@ -22,18 +22,13 @@ source("3_performance_criteria.R")
 # Simulation Driver - should return a data.frame or tibble
 #-----------------------------------------------------------
 
-# JEP: It might be easier to pare down the test_dat outside of this function,
-#      as part of the design for the power sims. Then you could nest() the 
-#      test_dat and pass it as an argument.
-
-
 run_sim <- function(iterations, 
                     m, 
                     tau, 
                     rho, 
                     beta_type, 
                     test_dat,
-                    R = 399,
+                    R = 399, # need to figure out how to pass this to cwb()
                     full_form = "X1 + X2 + X3 + X4 + X5", 
                     design_matrix = design_mat, 
                     seed = NULL) {
@@ -87,6 +82,7 @@ run_sim <- function(iterations,
         select(null_model, indices_test)
       
       # if i don't put data and R and full_mod_form as default something goes wrong
+      # need to figure out how to do R 
       boot_res <- pmap_dfr(cwb_params, cwb)
       
       res <- 
@@ -114,6 +110,7 @@ design_factors <- list(
   m = c(10, 20, 40, 80), 
   tau = c(0.1, 0.3),
   rho = c(0.5, 0.8),
+  R = 399,
   beta_type = c("A", "B1", "B5", "C1", "C5", "D1", "D5", "E1", "E5", "F1", "F5")
 )
 
