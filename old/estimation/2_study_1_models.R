@@ -39,8 +39,7 @@ to_test <- tibble(equ = equations,
          null_model = paste("g ~ ", null_model),
          indices_test = indices_test,
          contrasts = unlist(contrasts)) %>%
-  select(cov_test = equ, null_model, indices_test, contrasts) %>%
-  mutate(R = 399)
+  select(cov_test = equ, null_model, indices_test, contrasts)
 
 
 save(to_test, file = "../sim_tacc/data/to_test.RData")

@@ -4,7 +4,6 @@ library(mvtnorm)
 library(robumeta)
 library(clubSandwich)
 library(tidyr)
-library(stringr)
 
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
@@ -26,35 +25,31 @@ source("3_performance_criteria.R")
 #      as part of the design for the power sims. Then you could nest() the 
 #      test_dat and pass it as an argument.
 
+# instead of passing to_test - simulation design as a parameter dataset 
+# make a little data frame with just beta types 
+# Cross it with full to_test filter to just the tests that you want 
+# nest it one row per beta type 
 
-run_sim <- function(iterations, 
-                    m, 
-                    tau, 
-                    rho, 
-                    beta_type, 
-                    test_dat,
-                    R = 399,
-                    full_form = "X1 + X2 + X3 + X4 + X5", 
+# put R in params instead of to_test
+
+run_sim <- function(iterations, m, tau, rho, beta_type, R, 
+                    full_form = "g ~ X1 + X2 + X3 + X4 + X5", 
                     design_matrix = design_mat, 
+                    test_dat = to_test, 
                     seed = NULL) {
-
   
+    
   if (!is.null(seed)) set.seed(seed)
-
   
   results <-
     map_dfr(1:iterations, {
         
       # generate data ------------------------------------------------------------
-      meta_data <- generate_rmeta(m = m, 
-                                  tau = tau, 
-                                  rho = rho,
-                                  covs = design_matrix,
-                                  beta_type = beta_type)
+      meta_data <- generate_rmeta(m = m, tau = tau, rho = rho, beta_type = beta_type)
       
       # Fit full model on data --------------------------------------------------
       full_formula <- full_form
-      full_model <- robu(as.formula(paste("g ~ ", full_formula)), 
+      full_model <- robu(as.formula(full_formula), 
                          studynum = study, 
                          var.eff.size = var_g,
                          small = FALSE,
@@ -83,10 +78,12 @@ run_sim <- function(iterations,
       
 
       # cwb ---------------------------------------------------------------------
+      # put R in params
       cwb_params <- test_dat %>%
-        select(null_model, indices_test)
+        select(null_model, indices_test, R)
+        select(null_model, indices_test, beta_seed)
+
       
-      # if i don't put data and R and full_mod_form as default something goes wrong
       boot_res <- pmap_dfr(cwb_params, cwb)
       
       res <- 
@@ -122,31 +119,9 @@ design_factors <- list(
 params <-
   cross_df(design_factors) %>%
   mutate(
-    iterations = 1000, # change this to how many ever iterations
+    iterations = 4000, # change this to how many ever iterations
     seed = round(runif(1) * 2^30) + 1:n()
   )
-
-to_test_beta <- cross_df(list(beta_type = design_factors$beta_type, 
-                              cov_test = test_dat$cov_test)) %>%
-  left_join(test_dat %>% select(cov_test, null_model, indices_test), by = "cov_test") %>%
-  mutate(keep = case_when(beta_type == "A" ~ TRUE,
-                          beta_type %in% c("B1", "B5") ~ str_detect(cov_test, "X1"),
-                          beta_type %in% c("C1", "C5") ~ str_detect(cov_test, "X2"),
-                          beta_type %in% c("D1", "D5") ~ str_detect(cov_test, "X3"),
-                          beta_type %in% c("E1", "E5") ~  str_detect(cov_test, "X4"),
-                          beta_type %in% c("F1", "F5") ~ str_detect(cov_test, "X5"),
-                          )) %>%
-  filter(keep) %>%
-  select(-keep) %>%
-  group_by(beta_type) %>%
-  nest() %>%
-  ungroup()
-
-params <- params %>%
-  left_join(to_test_beta, by = "beta_type") %>%
-  rename(test_dat = data)
-
-glimpse(params)
 
 
 #--------------------------------------------------------

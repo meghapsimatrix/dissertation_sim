@@ -53,14 +53,19 @@ htz_res <-  Wald_test(full_model,
 
 # cwb ---------------------------------------------------------------------
 set.seed(10152020)
+system.time(res <- cwb(dat = meta_data, null_model = test_dat$null_model[[1]], R = 399, full_mod_form = "X1 + X2 + X3 + X4 + X5", indices_test = test_dat$indices_test[[1]]))
 
-test_dat <- test_dat %>%
-  mutate(boot_seed = round(runif(1) * 2^30) + 1:n())
-
+# need to figure out the following
+# how am I doing the R thing?
 cwb_params <- test_dat %>%
-  select(null_model, R, boot_seed, indices_test)
+  select(null_model, indices_test)
 
-boot_res <- pmap_dfr(cwb_params[1:2, ], cwb)  # something is wrong
+# if i don't put data and R and full_mod_form as default something goes wrong
+boot_res <- pmap_dfr(cwb_params[1:2, ], cwb)  # this works
+
+# this doesn't work - pmap - non-changing params
+boot_res <- pmap_dfr(cwb_params[1:2, ], cwb, data = meta_data, R = 399, full_mod_form = "X1 + X2 + X3 + X4 + X5")  # something is wrong
+
 
 res <- 
   bind_cols(naive_res, htz_res) %>%

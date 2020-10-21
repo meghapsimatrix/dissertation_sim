@@ -9,7 +9,7 @@ calc_performance <- function(results) {
   performance_measures <- 
     results %>%
     filter(!is.na(p_val)) %>%
-    group_by(contrasts, test) %>%
+    group_by(cov_test, test) %>%
     summarize(K = n(),
               rej_rate_05 = mean(p_val < .05),
               mcse_05 = sqrt((rej_rate_05 * (1 - rej_rate_05))/K),
