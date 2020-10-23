@@ -22,12 +22,11 @@ source("1_data_gen_study_1.R")
 test_dat <- to_test
 rm(to_test)
 full_form <- "X1 + X2 + X3 + X4 + X5"
-
+R <- 399
 
 
 # Fit full model on data --------------------------------------------------
-full_formula <- full_form
-full_model <- robu(as.formula(paste("g ~ ", full_formula)), 
+full_model <- robu(as.formula(paste("g ~ ", full_form)), 
                    studynum = study, 
                    var.eff.size = var_g,
                    small = FALSE,
@@ -57,16 +56,26 @@ htz_res <- Wald_test(full_model,
 
 # cwb ---------------------------------------------------------------------
 cwb_params <- test_dat %>%
-  select(null_model, indices_test)
+  select(null_model, indices_test) %>%
+  mutate(R = R,
+         full_form = full_form)
 
 # if i don't put data and R and full_mod_form as default something goes wrong
 # need to figure out how to do R 
 # 490 seconds for 10 
 # 2179.152  seconds for 31
-system.time(boot_res <- pmap_dfr(cwb_params, cwb))
-boot_res
+system.time(boot_res <- pmap_dfr(cwb_params[1:2, ], cwb, dat = meta_data))
+small_boot <- boot_res
+small_boot
 
-save(boot_res, file = "../data/boot_res_1021.RData")
+
+# system.time(boot_res <- pmap_dfr(cwb_params, cwb))
+# boot_res
+# 
+# 
+# save(boot_res, file = "../data/boot_res_1021.RData")
+
+load("../data/boot_res_1021.RData")
 
 res <- 
   bind_cols(naive_res, htz_res, boot_res) %>%

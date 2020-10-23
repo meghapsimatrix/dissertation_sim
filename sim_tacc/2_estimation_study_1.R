@@ -29,11 +29,7 @@ extract_stats <- function(mod, C, vcov_mat, method) {
 
 
 
-cwb <- function(null_model, 
-                indices_test, 
-                dat = meta_data, 
-                R = 399, 
-                full_form = "X1 + X2 + X3 + X4 + X5") {
+cwb <- function(null_model, indices_test, R, full_form, dat) {
   
   null_mod <- robu(as.formula(null_model), 
                    studynum = study, 

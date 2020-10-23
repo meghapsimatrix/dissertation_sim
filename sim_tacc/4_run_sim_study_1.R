@@ -9,6 +9,7 @@ library(stringr)
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 load("data/to_test.Rdata")
+test_dat <- to_test
 
 #-----------------------------------------------------------
 # Source the functions
@@ -28,7 +29,7 @@ run_sim <- function(iterations,
                     rho, 
                     beta_type, 
                     test_dat,
-                    R = 399, # need to figure out how to pass this to cwb()
+                    R,
                     full_form = "X1 + X2 + X3 + X4 + X5", 
                     design_matrix = design_mat, 
                     seed = NULL) {
@@ -48,8 +49,7 @@ run_sim <- function(iterations,
                                   beta_type = beta_type)
       
       # Fit full model on data --------------------------------------------------
-      full_formula <- full_form
-      full_model <- robu(as.formula(paste("g ~ ", full_formula)), 
+      full_model <- robu(as.formula(paste("g ~ ", full_form)), 
                          studynum = study, 
                          var.eff.size = var_g,
                          small = FALSE,
@@ -79,11 +79,13 @@ run_sim <- function(iterations,
 
       # cwb ---------------------------------------------------------------------
       cwb_params <- test_dat %>%
-        select(null_model, indices_test)
+        select(null_model, indices_test) %>%
+        mutate(R = R,
+               full_form = full_form)
       
       # if i don't put data and R and full_mod_form as default something goes wrong
       # need to figure out how to do R 
-      boot_res <- pmap_dfr(cwb_params, cwb)
+      boot_res <- pmap_dfr(cwb_params, cwb, dat = meta_data)
       
       res <- 
         bind_cols(naive_res, htz_res, boot_res) %>%
@@ -125,12 +127,12 @@ params <-
 
 to_test_beta <- cross_df(list(beta_type = design_factors$beta_type, 
                               cov_test = test_dat$cov_test)) %>%
-  left_join(test_dat %>% select(cov_test, null_model, indices_test), by = "cov_test") %>%
+  left_join(to_test %>% select(cov_test, null_model, indices_test), by = "cov_test") %>%
   mutate(keep = case_when(beta_type == "A" ~ TRUE,
                           beta_type %in% c("B1", "B5") ~ str_detect(cov_test, "X1"),
                           beta_type %in% c("C1", "C5") ~ str_detect(cov_test, "X2"),
                           beta_type %in% c("D1", "D5") ~ str_detect(cov_test, "X3"),
-                          beta_type %in% c("E1", "E5") ~  str_detect(cov_test, "X4"),
+                          beta_type %in% c("E1", "E5") ~ str_detect(cov_test, "X4"),
                           beta_type %in% c("F1", "F5") ~ str_detect(cov_test, "X5"),
                           )) %>%
   filter(keep) %>%
@@ -145,6 +147,20 @@ params <- params %>%
 
 glimpse(params)
 
+
+
+
+# Just checking!! ---------------------------------------------------------
+
+system.time(
+  results <- 
+    params[1, ] %>%
+    mutate(iterations = 1) %>%
+    mutate(
+      res = pmap(., .f = run_sim)
+    ) %>%
+    unnest(cols = res)
+)
 
 #--------------------------------------------------------
 # run simulations in parallel - mdply workflow
