@@ -9,7 +9,6 @@ library(stringr)
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 load("data/to_test.Rdata")
-test_dat <- to_test
 
 #-----------------------------------------------------------
 # Source the functions
@@ -28,6 +27,7 @@ run_sim <- function(iterations,
                     tau, 
                     rho, 
                     beta_type, 
+                    batch,
                     test_dat,
                     R,
                     full_form = "X1 + X2 + X3 + X4 + X5", 
@@ -39,7 +39,7 @@ run_sim <- function(iterations,
 
   
   results <-
-    map_dfr(1:iterations, {
+    rerun(iterations, {
         
       # generate data ------------------------------------------------------------
       meta_data <- generate_rmeta(m = m, 
@@ -89,12 +89,13 @@ run_sim <- function(iterations,
       
       res <- 
         bind_cols(naive_res, htz_res, boot_res) %>%
-        bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
-        gather(test, p_val, -c(cov_test, contrasts))
+        bind_cols(test_dat %>% dplyr::select(cov_test)) %>%
+        gather(test, p_val, -c(cov_test))
       
-    }) 
+    })  %>%
+    bind_rows()
   
-  calc_performance(res)
+  calc_performance(results)
 }
 
 # demonstrate the simulation driver
@@ -113,20 +114,22 @@ design_factors <- list(
   tau = c(0.1, 0.3),
   rho = c(0.5, 0.8),
   R = 399,
-  beta_type = c("A", "B1", "B5", "C1", "C5", "D1", "D5", "E1", "E5", "F1", "F5")
+  beta_type = c("A", "B1", "B5", "C1", "C5", "D1", "D5", "E1", "E5", "F1", "F5"),
+  batch = 1:10
 )
 
 # combine into a design set
 
+
 params <-
   cross_df(design_factors) %>%
   mutate(
-    iterations = 1000, # change this to how many ever iterations
+    iterations = 100, # change this to how many ever iterations
     seed = round(runif(1) * 2^30) + 1:n()
   )
 
 to_test_beta <- cross_df(list(beta_type = design_factors$beta_type, 
-                              cov_test = test_dat$cov_test)) %>%
+                              cov_test = to_test$cov_test)) %>%
   left_join(to_test %>% select(cov_test, null_model, indices_test), by = "cov_test") %>%
   mutate(keep = case_when(beta_type == "A" ~ TRUE,
                           beta_type %in% c("B1", "B5") ~ str_detect(cov_test, "X1"),
@@ -152,15 +155,42 @@ glimpse(params)
 
 # Just checking!! ---------------------------------------------------------
 
+params <- params %>% 
+  filter(batch == 1) %>%
+  mutate(R = 2,
+         iterations = 2)
+
+glimpse(params)
+
+
 system.time(
-  results <- 
-    params[1, ] %>%
-    mutate(iterations = 1) %>%
-    mutate(
-      res = pmap(., .f = run_sim)
-    ) %>%
+  results <-
+    params %>%
+    mutate(res = pmap(., .f = run_sim)) %>%
     unnest(cols = res)
 )
+
+# 2248.625  user  27.416s system 2508.889 elapsed
+
+save(results, file = "../data/res_run_sim_1023.RData")
+
+
+
+library(future)
+library(furrr)
+
+plan(multisession) # choose an appropriate plan from the future package
+
+system.time(
+  results <-
+    params %>%
+    mutate(res = future_pmap(., .f = run_sim)) %>%
+    unnest(cols = res)
+)
+
+
+
+
 
 #--------------------------------------------------------
 # run simulations in parallel - mdply workflow
@@ -168,11 +198,13 @@ system.time(
 
 library(Pusto)
 
-cluster <- start_parallel(source_obj = source_obj, register = TRUE)
+cluster <- start_parallel(source_obj = source_obj)
 
 system.time(results <- plyr::mdply(params, .fun = run_sim, .parallel = TRUE))
 
 stopCluster(cluster)
+
+
 
 
 #--------------------------------------------------------

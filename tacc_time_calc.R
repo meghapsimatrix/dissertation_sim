@@ -19,7 +19,7 @@ all/(24 * 365)
 
 # 500 SU's is 3 years I need like double that + for study 2
 
-# hours on tacc
+# SU's on tacc??
 all / (68)  
 
 
