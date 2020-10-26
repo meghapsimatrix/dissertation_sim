@@ -64,18 +64,26 @@ cwb_params <- test_dat %>%
 # need to figure out how to do R 
 # 490 seconds for 10 
 # 2179.152  seconds for 31
-system.time(boot_res <- pmap_dfr(cwb_params[1:2, ], cwb, dat = meta_data))
+system.time(boot_res <- pmap_dfr(cwb_params[1:2, ], 
+                                 .f = cwb, 
+                                 full_mod_org = full_model, 
+                                 cov_mat = cov_mat_cr1, 
+                                 dat = meta_data))
 small_boot <- boot_res
 small_boot
 
 
-# system.time(boot_res <- pmap_dfr(cwb_params, cwb))
-# boot_res
+system.time(boot_res <- pmap_dfr(cwb_params, 
+                                 .f = cwb, 
+                                 full_mod_org = full_model, 
+                                 cov_mat = cov_mat_cr1, 
+                                 dat = meta_data))
+boot_res
 # 
-# 
-# save(boot_res, file = "../data/boot_res_1021.RData")
+# 2069.718 
+save(boot_res, file = "../data/boot_res_1026.RData")
 
-load("../data/boot_res_1021.RData")
+load("../data/boot_res_1026.RData")
 
 res <- 
   bind_cols(naive_res, htz_res, boot_res) %>%

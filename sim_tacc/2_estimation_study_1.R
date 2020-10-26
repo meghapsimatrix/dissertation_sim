@@ -29,19 +29,19 @@ extract_stats <- function(mod, C, vcov_mat, method) {
 
 
 
-cwb <- function(null_model, indices_test, R, full_form, dat) {
+cwb <- function(null_model, 
+                indices_test, 
+                R, 
+                full_form, 
+                full_mod_org, 
+                cov_mat, 
+                dat) {
   
   null_mod <- robu(as.formula(null_model), 
                    studynum = study, 
                    var.eff.size = var_g,
                    small = FALSE,
                    data = dat)
-  
-  full_mod_org <- robu(as.formula(paste("g ~", full_form)), 
-                       studynum = study, 
-                       var.eff.size = var_g,
-                       small = FALSE,
-                       data = dat)
   
   # residuals and transformed residuals -------------------------------------
   
@@ -58,44 +58,42 @@ cwb <- function(null_model, indices_test, R, full_form, dat) {
   num_studies <- unique(dat$study)
   k_j <- as.numeric(table(dat$study))
   
-  system.time(
+  bootstraps <- rerun(.n = R, {
     
-    bootstraps <- rerun(.n = R, {
-      
-      wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
-      dat$eta <- rep(wts, k_j)
-      dat$new_t <- with(dat, pred + res * eta)
-      dat$new_t_adj <- with(dat, pred + t_res * eta)
-      
-      full_mod <- robu(as.formula(paste("new_t ~", full_form)), 
-                       studynum = study, 
-                       var.eff.size = var_g,
-                       small = FALSE,
-                       data = dat)
-      
-      full_mod_adj <- robu(as.formula(paste("new_t_adj ~", full_form)), 
-                           studynum = study, 
-                           var.eff.size = var_g,
-                           small = FALSE,
-                           data = dat)
-      
-      
-      cov_mat <- vcovCR(full_mod, type = "CR1")
-      cov_mat_adj <- vcovCR(full_mod_adj, type = "CR1")
-      
-      res <- extract_stats(full_mod, constrain_zero(indices_test), cov_mat, "CWB")
-      res_adj <- extract_stats(full_mod_adj, constrain_zero(indices_test), cov_mat_adj, "CWB Adjusted")
-      
-      bind_rows(res, res_adj)
-      
-    }) %>%
-      bind_rows()
+    wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
+    dat$eta <- rep(wts, k_j)
+    dat$new_t <- with(dat, pred + res * eta)
+    dat$new_t_adj <- with(dat, pred + t_res * eta)
     
-  )
+    full_mod <- robu(as.formula(paste("new_t ~", full_form)), 
+                     studynum = study, 
+                     var.eff.size = var_g,
+                     small = FALSE,
+                     data = dat)
+    
+    full_mod_adj <- robu(as.formula(paste("new_t_adj ~", full_form)), 
+                         studynum = study, 
+                         var.eff.size = var_g,
+                         small = FALSE,
+                         data = dat)
+    
+    
+    cov_mat <- vcovCR(full_mod, type = "CR1")
+    cov_mat_adj <- vcovCR(full_mod_adj, type = "CR1")
+    
+    res <- extract_stats(full_mod, constrain_zero(indices_test), cov_mat, "CWB")
+    res_adj <- extract_stats(full_mod_adj, constrain_zero(indices_test), cov_mat_adj, "CWB Adjusted")
+    
+    bind_rows(res, res_adj)
+    
+  }) %>%
+    bind_rows()
+  
+  
   
   org_F <- Wald_test(full_mod_org, 
                      constraints = constrain_zero(indices_test), 
-                     vcov = vcovCR(full_mod_org, type = "CR1"),
+                     vcov = cov_mat,
                      test = "Naive-F") %>%
     pull(Fstat)
   

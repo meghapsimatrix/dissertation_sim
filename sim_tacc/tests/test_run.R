@@ -1,3 +1,23 @@
+library(dplyr)
+library(purrr)
+library(mvtnorm)
+library(robumeta)
+library(clubSandwich)
+library(tidyr)
+library(stringr)
+
+# Tipton Pusto design matrix cleaned - clean_design_mat.R
+load("data/design_mat.Rdata")
+load("data/to_test.Rdata")
+
+#-----------------------------------------------------------
+# Source the functions
+#-----------------------------------------------------------
+
+source("1_data_gen_study_1.R")
+source("2_estimation_study_1.R")
+source("3_performance_criteria.R")
+
 m <- 10
 tau <- .1
 rho <- .5
@@ -5,7 +25,7 @@ design_matrix <- design_mat
 beta_type <- "A"
 full_form <- "X1 + X2 + X3 + X4 + X5"
 test_dat <- to_test
-R <- 2
+R <- 20
 iterations <- 2
 
 

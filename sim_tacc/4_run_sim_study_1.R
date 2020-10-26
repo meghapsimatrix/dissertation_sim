@@ -83,9 +83,11 @@ run_sim <- function(iterations,
         mutate(R = R,
                full_form = full_form)
       
-      # if i don't put data and R and full_mod_form as default something goes wrong
-      # need to figure out how to do R 
-      boot_res <- pmap_dfr(cwb_params, cwb, dat = meta_data)
+      boot_res <- pmap_dfr(cwb_params, 
+                           .f = cwb, 
+                           full_mod_org = full_model, 
+                           cov_mat = cov_mat_cr1, 
+                           dat = meta_data)
       
       res <- 
         bind_cols(naive_res, htz_res, boot_res) %>%
@@ -155,40 +157,76 @@ glimpse(params)
 
 # Just checking!! ---------------------------------------------------------
 
-params <- params %>% 
+quick_params <- params %>% 
   filter(batch == 1) %>%
   mutate(R = 2,
          iterations = 2)
 
-glimpse(params)
+glimpse(quick_params)
 
 
 system.time(
   results <-
-    params %>%
+    quick_params %>%
     mutate(res = pmap(., .f = run_sim)) %>%
     unnest(cols = res)
 )
 
-# 2248.625  user  27.416s system 2508.889 elapsed
+# 2248.625  user  27.416 system 2508.889 elapsed on 1023
+# 1443.501  user  19.938 system 1528.106 elapsed on 1026
 
-save(results, file = "../data/res_run_sim_1023.RData")
+save(results, file = "../data/res_run_sim_1026.RData")
 
+
+# FURRR -------------------------------------------------------------------
 
 
 library(future)
 library(furrr)
+plan(multisession)
 
-plan(multisession) # choose an appropriate plan from the future package
+quick_params <- params %>% 
+  filter(batch == 1) %>%
+  mutate(R = 2,
+         iterations = 2)
+
+glimpse(quick_params)
+
+
+# user 13.239   system 0.725 elapsed 795.245 
 
 system.time(
-  results <-
-    params %>%
+  results_furrr <-
+    quick_params %>%
     mutate(res = future_pmap(., .f = run_sim)) %>%
     unnest(cols = res)
 )
 
+save(results, file = "../data/res_run_sim_1026_parallel.RData")
 
+
+
+# In parallel with furrr -------------------------------------------------
+
+library(future)
+library(furrr)
+plan(multiprocess)
+
+quick_params <- params %>% 
+  filter(batch == 1) %>%
+  mutate(R = 8,
+         iterations = 4)
+
+glimpse(quick_params)
+
+system.time(
+  results <-
+    quick_params %>%
+    mutate(res = future_pmap(., .f = run_sim)) %>%
+    unnest(cols = res)
+)
+
+save(results, file = "../data/res_run_sim_1023_parallel.RData")
 
 
 
