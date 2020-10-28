@@ -1,11 +1,11 @@
 m <- 4
 tau <- 2
 rho <- 2
-K <- 1000
+K <- 4000
 betas_power <- 10
-one_run <- 36/60
+one_run <- 3/60
 
-t_one_error <- (m * tau * rho * one_run * K) 
+t_one_error <- (m * tau * rho * one_run * K)
 
 power <- (m * tau * rho * (one_run/2) * K) 
 power_all <- power * betas_power
@@ -22,6 +22,6 @@ all/(24 * 365)
 # SU's on tacc??
 all / (68)  
 
-
+all / (68 * 4)  
 
 
