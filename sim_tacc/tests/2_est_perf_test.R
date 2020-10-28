@@ -60,30 +60,23 @@ cwb_params <- test_dat %>%
   mutate(R = R,
          full_form = full_form)
 
-# if i don't put data and R and full_mod_form as default something goes wrong
-# need to figure out how to do R 
-# 490 seconds for 10 
-# 2179.152  seconds for 31
 system.time(boot_res <- pmap_dfr(cwb_params[1:2, ], 
                                  .f = cwb, 
-                                 full_mod_org = full_model, 
-                                 cov_mat = cov_mat_cr1, 
                                  dat = meta_data))
 small_boot <- boot_res
 small_boot
 
 
+set.seed(10282020)
+
 system.time(boot_res <- pmap_dfr(cwb_params, 
                                  .f = cwb, 
-                                 full_mod_org = full_model, 
-                                 cov_mat = cov_mat_cr1, 
                                  dat = meta_data))
 boot_res
-# 
-# 2069.718 
-save(boot_res, file = "../data/boot_res_1026.RData")
 
-load("../data/boot_res_1026.RData")
+# 1502.069  on 1026 afternoon
+# 140.722   on 1027 night
+save(boot_res, file = "../data/boot_res_1028.RData")
 
 res <- 
   bind_cols(naive_res, htz_res, boot_res) %>%

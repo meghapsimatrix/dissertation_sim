@@ -85,8 +85,6 @@ run_sim <- function(iterations,
       
       boot_res <- pmap_dfr(cwb_params, 
                            .f = cwb, 
-                           full_mod_org = full_model, 
-                           cov_mat = cov_mat_cr1, 
                            dat = meta_data)
       
       res <- 
@@ -174,8 +172,10 @@ system.time(
 
 # 2248.625  user  27.416 system 2508.889 elapsed on 1023
 # 1443.501  user  19.938 system 1528.106 elapsed on 1026
+# 11302.157   26.863 1442.405 elapsed on 1026 afternoon
+#  519.659  13.403 566.618 elapsed on 1027
 
-save(results, file = "../data/res_run_sim_1026.RData")
+save(results, file = "../data/res_run_sim_1027.RData")
 
 
 # FURRR -------------------------------------------------------------------
