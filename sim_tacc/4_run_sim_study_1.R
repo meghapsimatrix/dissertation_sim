@@ -174,8 +174,9 @@ system.time(
 # 1528.106 elapsed on 1026
 # 1442.405 elapsed on 1026 afternoon
 # 566.618 elapsed on 1027
+# 323.27 elapsed on 1028 on R 3.6.0 on windows desktop
 
-save(results, file = "../data/res_run_sim_1027.RData")
+save(results, file = "../data/res_run_sim_1028.RData")
 
 
 
@@ -183,6 +184,7 @@ save(results, file = "../data/res_run_sim_1027.RData")
 
 library(future)
 library(furrr)
+
 plan(multiprocess)
 
 quick_params <- params %>% 
@@ -202,10 +204,32 @@ system.time(
 save(results, file = "../data/res_run_sim_1023_parallel.RData")
 
 
+# Error in terms.default(object) : no terms component nor attribute
+# Timing stopped at: 0.34 0.2 3.62
+# furrr is not running for me in either mac or windows
 
 #--------------------------------------------------------
 # run simulations in parallel - mdply workflow
 #--------------------------------------------------------
+
+library(Rmpi)
+library(snow)
+library(foreach)
+library(iterators)
+library(doSNOW)
+library(plyr)
+
+# set up parallel processing
+cluster <- getMPIcluster()
+registerDoSNOW(cluster)
+
+
+# export source functions
+clusterExport(cluster, source_obj)
+
+system.time(results <- mdply(parms, .fun = run_sim, .drop = FALSE, .parallel = TRUE))
+
+
 
 library(Pusto)
 
