@@ -155,18 +155,6 @@ mult_mat <- function(x, y) {
   
 }
 
-mult_mat_const <- function(x, y) {
-  
-  as.matrix(x * y)
-  
-}
-
-multiply_rve <- function(X_j, W_j, e_j){
-  
-  t(X_j) %*% W_j %*% e_j %*% t(e_j) %*% W_j %*% X_j
-  
-}
-
 
 calculate_F <- function(beta, vcov, constraints, p = 6, test){
   

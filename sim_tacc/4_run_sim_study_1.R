@@ -172,37 +172,10 @@ system.time(
 
 # 2248.625  user  27.416 system 2508.889 elapsed on 1023
 # 1443.501  user  19.938 system 1528.106 elapsed on 1026
-# 11302.157   26.863 1442.405 elapsed on 1026 afternoon
-#  519.659  13.403 566.618 elapsed on 1027
+# 11302.157 26.863 1442.405 elapsed on 1026 afternoon
+# 519.659  13.403 566.618 elapsed on 1027
 
 save(results, file = "../data/res_run_sim_1027.RData")
-
-
-# FURRR -------------------------------------------------------------------
-
-
-library(future)
-library(furrr)
-plan(multisession)
-
-quick_params <- params %>% 
-  filter(batch == 1) %>%
-  mutate(R = 2,
-         iterations = 2)
-
-glimpse(quick_params)
-
-
-# user 13.239   system 0.725 elapsed 795.245 
-
-system.time(
-  results_furrr <-
-    quick_params %>%
-    mutate(res = future_pmap(., .f = run_sim)) %>%
-    unnest(cols = res)
-)
-
-save(results, file = "../data/res_run_sim_1026_parallel.RData")
 
 
 
