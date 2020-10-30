@@ -110,7 +110,7 @@ run_sim <- function(iterations,
 #-------------------------------------
 # Experimental Design
 #-------------------------------------
-source_obj <- ls()
+
 # include design matrix, exclude to_test
 
 set.seed(20150316) # change this seed value!
@@ -170,6 +170,8 @@ quick_params <- params %>%
 
 glimpse(quick_params)
 
+rm(design_factors, params, to_test, to_test_beta, source_obj)
+source_obj <- ls()
 
 system.time(
   results <-
