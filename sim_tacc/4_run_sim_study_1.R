@@ -27,9 +27,9 @@ run_sim <- function(iterations,
                     rho, 
                     beta_type, 
                     batch,
-                    test_dat,
                     R,
                     full_form = "X1 + X2 + X3 + X4 + X5", 
+                    test_dat = to_test,
                     design_matrix = design_mat, 
                     seed = NULL) {
   
@@ -39,6 +39,37 @@ run_sim <- function(iterations,
   require(clubSandwich)
   require(tidyr)
   require(stringr)
+  
+  if (beta_type %in% c("B1", "B5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X1"))
+    
+  } else if(beta_type %in% c("C1", "C5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X2"))
+    
+  } else if(beta_type %in% c("D1", "D5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X3"))
+    
+  } else if(beta_type %in% c("E1", "E5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X4"))
+    
+  } else if(beta_type %in% c("F1", "F5")){
+    
+    test_dat <- test_dat %>%
+      filter(str_detect(cov_test, "X5"))
+    
+  } else if (beta_type == "A" ){
+    
+    test_dat <- test_dat 
+    
+  } 
 
   
   if (!is.null(seed)) set.seed(seed)
@@ -136,29 +167,31 @@ params <-
     seed = round(runif(1) * 2^30) + 1:n()
   )
 
-to_test_beta <- cross_df(list(beta_type = design_factors$beta_type, 
-                              cov_test = to_test$cov_test)) %>%
-  left_join(to_test %>% select(cov_test, null_model, indices_test), by = "cov_test") %>%
-  mutate(keep = case_when(beta_type == "A" ~ TRUE,
-                          beta_type %in% c("B1", "B5") ~ str_detect(cov_test, "X1"),
-                          beta_type %in% c("C1", "C5") ~ str_detect(cov_test, "X2"),
-                          beta_type %in% c("D1", "D5") ~ str_detect(cov_test, "X3"),
-                          beta_type %in% c("E1", "E5") ~ str_detect(cov_test, "X4"),
-                          beta_type %in% c("F1", "F5") ~ str_detect(cov_test, "X5"),
-                          )) %>%
-  filter(keep) %>%
-  select(-keep) %>%
-  group_by(beta_type) %>%
-  nest() %>%
-  ungroup()
-
-params <- params %>%
-  left_join(to_test_beta, by = "beta_type") %>%
-  rename(test_dat = data)
-
 glimpse(params)
 
-
+# to_test_beta <- cross_df(list(beta_type = design_factors$beta_type, 
+#                               cov_test = to_test$cov_test)) %>%
+#   left_join(to_test %>% select(cov_test, null_model, indices_test), by = "cov_test") %>%
+#   mutate(keep = case_when(beta_type == "A" ~ TRUE,
+#                           beta_type %in% c("B1", "B5") ~ str_detect(cov_test, "X1"),
+#                           beta_type %in% c("C1", "C5") ~ str_detect(cov_test, "X2"),
+#                           beta_type %in% c("D1", "D5") ~ str_detect(cov_test, "X3"),
+#                           beta_type %in% c("E1", "E5") ~ str_detect(cov_test, "X4"),
+#                           beta_type %in% c("F1", "F5") ~ str_detect(cov_test, "X5"),
+#                           )) %>%
+#   filter(keep) %>%
+#   select(-keep) %>%
+#   group_by(beta_type) %>%
+#   nest() %>%
+#   ungroup()
+# 
+# params <- params %>%
+#   left_join(to_test_beta, by = "beta_type") %>%
+#   rename(test_dat = data)
+# 
+# glimpse(params)
+# 
+# 
 
 
 # Just checking!! ---------------------------------------------------------
@@ -170,8 +203,10 @@ quick_params <- params %>%
 
 glimpse(quick_params)
 
-rm(design_factors, params, to_test, to_test_beta, source_obj)
+rm(design_factors, params)
 source_obj <- ls()
+
+source_obj
 
 system.time(
   results <-
@@ -185,9 +220,9 @@ system.time(
 # 1442.405 elapsed on 1026 afternoon
 # 566.618 elapsed on 1027
 # 323.27 elapsed on 1028 on R 3.6.0 on windows desktop
-# 983.148  on 1030 on mac
+# 898.874 on 1030 on mac
 
-save(results, file = "../data/res_run_sim_1028.RData")
+save(results, file = "../data/res_run_sim_1030.RData")
 
 
 
@@ -246,6 +281,9 @@ system.time(results <- plyr::mdply(quick_params,
 
 stopCluster(cluster)
 
+# 446.282 on 1030
+
+save(results, file = "../data/res_run_sim_mdply_1030.RData")
 
 # Error in do.ply(i) : 
 #   task 1 failed - "You must specify at least one constraint."

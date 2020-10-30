@@ -1,7 +1,6 @@
 library(dplyr)
 library(purrr)
 library(mvtnorm)
-library(robumeta)
 library(clubSandwich)
 library(tidyr)
 
@@ -26,13 +25,6 @@ R <- 399
 
 
 # Fit full model on data --------------------------------------------------
-full_model <- robu(as.formula(paste("g ~ ", full_form)), 
-                   studynum = study, 
-                   var.eff.size = var_g,
-                   small = FALSE,
-                   data = meta_data)
-
-
 y <- meta_data$g
 v <- meta_data$var_g
 X <- model.matrix(as.formula(paste("g ~ ", full_form)), data = meta_data)
