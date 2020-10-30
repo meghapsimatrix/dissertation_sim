@@ -32,9 +32,19 @@ full_model <- robu(as.formula(paste("g ~ ", full_form)),
                    small = FALSE,
                    data = meta_data)
 
+
+y <- meta_data$g
+v <- meta_data$var_g
+X <- model.matrix(as.formula(paste("g ~ ", full_form)), data = meta_data)
+cluster <- meta_data$study
+
+full_model <- robu_handmade(X = X, y = y, v = v, cluster = cluster)
+
+full_model
+
 # get cov matrices --------------------------------------------------------
-cov_mat_cr1 <- vcovCR(full_model, type = "CR1")
-cov_mat_cr2 <- vcovCR(full_model, type = "CR2")
+cov_mat_cr1 <- vcovCR(full_model, type = "CR1", cluster = cluster)
+cov_mat_cr2 <- vcovCR(full_model, type = "CR2", cluster = cluster)
 
 # get naive and htz -------------------------------------------------------
 names(test_dat$indices_test) <- test_dat$cov_test
@@ -56,13 +66,13 @@ htz_res <- Wald_test(full_model,
 
 # cwb ---------------------------------------------------------------------
 cwb_params <- test_dat %>%
-  select(null_model, indices_test) %>%
-  mutate(R = R,
-         full_form = full_form)
+  select(null_model, indices_test)
 
 system.time(boot_res <- pmap_dfr(cwb_params[1:2, ], 
                                  .f = cwb, 
-                                 dat = meta_data))
+                                 dat = meta_data,
+                                 R = R,
+                                 full_form = full_form))
 small_boot <- boot_res
 small_boot
 
@@ -71,14 +81,17 @@ set.seed(10282020)
 
 system.time(boot_res <- pmap_dfr(cwb_params, 
                                  .f = cwb, 
-                                 dat = meta_data))
+                                 dat = meta_data,
+                                 R = R,
+                                 full_form = full_form))
 boot_res
 
 # 1502.069  on 1026 afternoon
 # 140.722   on 1027 night
-save(boot_res, file = "../data/boot_res_1028.RData")
+# 171.116  on 1030
+save(boot_res, file = "../data/boot_res_1030.RData")
 
-load("../data/boot_res_1028.RData")
+load("../data/boot_res_1030.RData")
 
 res <- 
   bind_cols(naive_res, htz_res, boot_res) %>%

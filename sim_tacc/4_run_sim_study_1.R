@@ -1,7 +1,6 @@
 library(dplyr)
 library(purrr)
 library(mvtnorm)
-library(robumeta)
 library(clubSandwich)
 library(tidyr)
 library(stringr)
@@ -33,6 +32,13 @@ run_sim <- function(iterations,
                     full_form = "X1 + X2 + X3 + X4 + X5", 
                     design_matrix = design_mat, 
                     seed = NULL) {
+  
+  require(dplyr)
+  require(purrr)
+  require(mvtnorm)
+  require(clubSandwich)
+  require(tidyr)
+  require(stringr)
 
   
   if (!is.null(seed)) set.seed(seed)
@@ -49,15 +55,16 @@ run_sim <- function(iterations,
                                   beta_type = beta_type)
       
       # Fit full model on data --------------------------------------------------
-      full_model <- robu(as.formula(paste("g ~ ", full_form)), 
-                         studynum = study, 
-                         var.eff.size = var_g,
-                         small = FALSE,
-                         data = meta_data)
+      y <- meta_data$g
+      v <- meta_data$var_g
+      X <- model.matrix(as.formula(paste("g ~ ", full_form)), data = meta_data)
+      cluster <- meta_data$study
+      
+      full_model <- robu_handmade(X = X, y = y, v = v, cluster = cluster)
       
       # get cov matrices --------------------------------------------------------
-      cov_mat_cr1 <- vcovCR(full_model, type = "CR1")
-      cov_mat_cr2 <- vcovCR(full_model, type = "CR2")
+      cov_mat_cr1 <- vcovCR(full_model, type = "CR1", cluster = cluster)
+      cov_mat_cr2 <- vcovCR(full_model, type = "CR2", cluster = cluster)
       
       # get naive and htz -------------------------------------------------------
       names(test_dat$indices_test) <- test_dat$cov_test
@@ -79,13 +86,13 @@ run_sim <- function(iterations,
 
       # cwb ---------------------------------------------------------------------
       cwb_params <- test_dat %>%
-        select(null_model, indices_test) %>%
-        mutate(R = R,
-               full_form = full_form)
+        select(null_model, indices_test)
       
       boot_res <- pmap_dfr(cwb_params, 
                            .f = cwb, 
-                           dat = meta_data)
+                           dat = meta_data,
+                           R = R,
+                           full_form = full_form)
       
       res <- 
         bind_cols(naive_res, htz_res, boot_res) %>%
@@ -104,6 +111,7 @@ run_sim <- function(iterations,
 # Experimental Design
 #-------------------------------------
 source_obj <- ls()
+# include design matrix, exclude to_test
 
 set.seed(20150316) # change this seed value!
 
@@ -175,6 +183,7 @@ system.time(
 # 1442.405 elapsed on 1026 afternoon
 # 566.618 elapsed on 1027
 # 323.27 elapsed on 1028 on R 3.6.0 on windows desktop
+# 983.148  on 1030 on mac
 
 save(results, file = "../data/res_run_sim_1028.RData")
 
@@ -182,65 +191,63 @@ save(results, file = "../data/res_run_sim_1028.RData")
 
 # In parallel with furrr -------------------------------------------------
 
-library(future)
-library(furrr)
-
-plan(multiprocess)
-
-quick_params <- params %>% 
-  filter(batch == 1) %>%
-  mutate(R = 8,
-         iterations = 4)
-
-glimpse(quick_params)
-
-system.time(
-  results <-
-    quick_params %>%
-    mutate(res = future_pmap(., .f = run_sim)) %>%
-    unnest(cols = res)
-)
-
-save(results, file = "../data/res_run_sim_1023_parallel.RData")
+# library(future)
+# library(furrr)
+# 
+# #plan(multiprocess)
+# plan(multicore)
+# 
+# quick_params <- params %>% 
+#   filter(batch == 1) %>%
+#   mutate(R = 8,
+#          iterations = 4)
+# 
+# glimpse(quick_params)
+# 
+# system.time(
+#   results <-
+#     quick_params %>%
+#     mutate(res = future_pmap(., .f = run_sim)) %>%
+#     unnest(cols = res)
+# )
+# 
+# save(results, file = "../data/res_run_sim_1023_parallel.RData")
 
 
 # Error in terms.default(object) : no terms component nor attribute
 # Timing stopped at: 0.34 0.2 3.62
-# furrr is not running for me in either mac or windows
+# furrr is not running for me in either windows
+
+# Error: Problem with `mutate()` input `res`.
+# x missing or negative weights not allowed
+# ℹ Input `res` is `future_pmap(., .f = run_sim)`.
 
 #--------------------------------------------------------
 # run simulations in parallel - mdply workflow
 #--------------------------------------------------------
 
-library(Rmpi)
-library(snow)
-library(foreach)
-library(iterators)
-library(doSNOW)
-library(plyr)
-
-# set up parallel processing
-cluster <- getMPIcluster()
-registerDoSNOW(cluster)
-
-
-# export source functions
-clusterExport(cluster, source_obj)
-
-system.time(results <- mdply(parms, .fun = run_sim, .drop = FALSE, .parallel = TRUE))
-
-
 
 library(Pusto)
 
-cluster <- start_parallel(source_obj = source_obj)
+cluster <- start_parallel(source_obj = source_obj, 
+                          setup = "register",
+                          packages = c("dplyr", "purrr", "mvtnorm",
+                                       "clubSandwich",
+                                       "tidyr", "stringr"))
 
-system.time(results <- plyr::mdply(params, .fun = run_sim, .parallel = TRUE))
+
+# any function or object that R needs to have 
+
+system.time(results <- plyr::mdply(quick_params, 
+                                   .fun = run_sim, 
+                                   .parallel = TRUE))
 
 stopCluster(cluster)
 
 
-
+# Error in do.ply(i) : 
+#   task 1 failed - "You must specify at least one constraint."
+# Timing stopped at: 34.71 0.778 19.61
 
 #--------------------------------------------------------
 # Save results and details

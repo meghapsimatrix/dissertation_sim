@@ -188,9 +188,16 @@ cwb <- function(null_model,
     
     cluster <- dat$study
     
-    null_mod <- robu_handmade(X = X_null, y = y, v = v, cluster = cluster)
+    null_mod <- robu_handmade(X = X_null, 
+                              y = y, 
+                              v = v, 
+                              cluster = cluster)
     
-    full_mod_org <- robu_handmade(X = X_full, y = y, v = v, cluster = cluster, calc_vcov = "CR0")
+    full_mod_org <- robu_handmade(X = X_full, 
+                                  y = y, v = v, 
+                                  cluster = cluster, 
+                                  calc_vcov = "CR0")
+    
     cov_mat_org <- full_mod_org$vcov
     
     # residuals and transformed residuals -------------------------------------
@@ -199,7 +206,10 @@ cwb <- function(null_model,
     dat$pred <- null_mod$fitted.values
     split_res <- split(dat$res, dat$study)
     e_tilde_j <- map(split_res, change_to_mat)
-    B_j <- attr(vcovCR(null_mod, cluster = cluster, type = "CR2", inverse_var = TRUE), "adjustments")
+    B_j <- attr(vcovCR(null_mod, 
+                       cluster = cluster, 
+                       type = "CR2", 
+                       inverse_var = TRUE), "adjustments")
     dat$t_res <- unlist(pmap(list(B_j, e_tilde_j), mult_mat))
     
     
@@ -221,8 +231,15 @@ cwb <- function(null_model,
       cov_mat_cwb <- full_mod_cwb$vcov
       cov_mat_cwb_adj <- full_mod_cwb_adj$vcov
       
-      res <- calculate_F(beta = full_mod_cwb$coefficients, vcov = cov_mat_cwb, constraints = indices_test, test = "CWB")
-      res_adj <- calculate_F(beta = full_mod_cwb_adj$coefficients, vcov = cov_mat_cwb_adj, constraints = indices_test, test = "CWB Adjusted")
+      res <- calculate_F(beta = full_mod_cwb$coefficients, 
+                         vcov = cov_mat_cwb, 
+                         constraints = indices_test, 
+                         test = "CWB")
+      
+      res_adj <- calculate_F(beta = full_mod_cwb_adj$coefficients, 
+                             vcov = cov_mat_cwb_adj, 
+                             constraints = indices_test, 
+                             test = "CWB Adjusted")
       
       bind_rows(res, res_adj)
       
