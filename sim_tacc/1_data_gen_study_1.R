@@ -33,15 +33,17 @@ generate_rsmd <- function(delta, k, N, Sigma) {
 
 generate_es_num <- function(dat) {
   
-  dat <- dat %>%  
-    group_by(study) %>%
-    mutate(es_num = sequence(n())) %>%
-    ungroup() %>%
-    select(study, es_num, everything())
-  
+   dat$es_num <- sequence(rle(dat$study)$lengths)
+   
+   dat <- dat %>%
+   #   group_by(study) %>%
+   #   mutate(es_num = dplyr::row_number()) %>%
+      ungroup() %>%
+      select(study, es_num, everything())
+   
   return(dat)
 }
-
+ 
 
 
 

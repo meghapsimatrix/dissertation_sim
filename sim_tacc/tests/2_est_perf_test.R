@@ -81,20 +81,21 @@ boot_res
 # 1502.069  on 1026 afternoon
 # 140.722   on 1027 night
 # 171.116  on 1030
-save(boot_res, file = "../data/boot_res_1030.RData")
+save(boot_res, file = "../data/boot_res_1102.RData")
 
-load("../data/boot_res_1030.RData")
+load("../data/boot_res_1102.RData")
 
 res <- 
   bind_cols(naive_res, htz_res, boot_res) %>%
   bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
   gather(test, p_val, -c(cov_test, contrasts))
 
-calc_performance(res)
+results <- calc_performance(res, iterations = 1)
 
 
 
 # handmade tests ----------------------------------------------------------
+library(robumeta)
 
 robu_fit <- robu(g ~ X1 + X2 + X3 + X4 + X5, 
                  data = meta_data, studynum = study, 
