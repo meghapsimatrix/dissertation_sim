@@ -194,7 +194,7 @@ system.time(
 # 566.618 elapsed on 1027
 # 323.27 elapsed on 1028 on R 3.6.0 on windows desktop
 # 898.874 on 1030 on mac
-# 347.83 elapsed on 1102 on R 3.6.0 on windows desktop
+# 316.79 elapsed on 1102 on R 3.6.0 on windows desktop
 
 save(results, file = "../data/res_run_sim_1102.RData")
 

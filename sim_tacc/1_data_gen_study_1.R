@@ -135,7 +135,7 @@ generate_rmeta <- function(m,
   
   # join with the study data 
   study_data <- study_data %>%
-    left_join(true_delta, by = "study") %>%
+    dplyr::left_join(true_delta, by = "study") %>%
     select(-study)
   
   if (return_study_params) return(study_data)
@@ -147,7 +147,7 @@ generate_rmeta <- function(m,
     pmap_df(study_data, generate_rsmd, .id = "study") %>%
     mutate(study = as.numeric(study)) %>% # have to do study and es_num here again to join the covs
     generate_es_num() %>%
-    left_join(design_mat_all, by = c("study", "es_num"))
+    dplyr::left_join(design_mat_all, by = c("study", "es_num"))
   
   
   return(meta_cov_dat)
