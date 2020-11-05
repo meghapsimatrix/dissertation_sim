@@ -15,6 +15,16 @@ load("data/design_mat.Rdata")
 source("1_data_gen_study_1.R")
 
 
+set.seed(509985477)
+
+meta_data <- 
+  generate_rmeta(m = 10, 
+                 tau = 0.1, 
+                 rho = 0.8, 
+                 covs = design_mat,
+                 beta_type = "A")
+
+
 # generate meta data 
 set.seed(342020)
 
@@ -24,6 +34,13 @@ meta_data <-
   generate_rmeta(m = 80, 
                  tau = 0.4, 
                  rho = 0.8, 
+                 covs = design_mat,
+                 beta_type = "A")
+
+meta_data <- 
+  generate_rmeta(m = 10, 
+                 tau = 0.1, 
+                 rho = 0.5, 
                  covs = design_mat,
                  beta_type = "A")
 
@@ -122,6 +139,11 @@ V_mat <- impute_covariance_matrix(vi = meta_data$var_g,
                                   cluster = meta_data$study, 
                                   r = 0.6)
 
+
+meta_data %>%
+  group_by(study) %>%
+ summarize(n = n()) %>% 
+  View()
 
 head(V_mat)
 

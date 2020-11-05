@@ -1,0 +1,60 @@
+# using mac terminal app
+
+
+# move your files from your computer to tacc
+(base) Meghas-Air:~ meghajoshi$ scp -r  ~/Desktop/cwb/ meghaj@stampede2.tacc.utexas.edu:~
+
+# this is ask your password and tacc token; when you enter them you should have transfered the file to tacc
+
+
+
+# log into tacc 
+(base) Meghas-Air:~ meghajoshi$ ssh meghaj@stampede2.tacc.utexas.edu
+# it will again ask for password and token
+
+
+# open R - make sure it's the right version 3.5.1
+login4.stampede2(40)$ R
+
+#then install packages
+install.packages(c("dplyr", "purrr", "tidyr"), type = "source") # install from source
+# load the libraries and check if the right versions got installed
+sessionInfo()
+
+# to quit R 
+quit()
+
+
+# check
+login4.stampede2(10)$ ls
+cwb
+login4.stampede2(11)$ cd cwb/
+login4.stampede2(12)$ ls
+1_data_gen_study_1.R  2_estimation_study_1.R  3_performance_criteria.R  4_run_sim_study.R  data  run_CWB_sims.bash  sim_tacc.Rproj
+
+
+# to view a file
+login4.stampede2(54)$ vim run_CWB_sims.bash 
+
+# to edit the file you can do press i then change anything you want and then press esc then press shift + colon then type wq
+# if you didn't edit and you used vim to view just press shift + colon and then type q
+
+
+# run the bash script
+login4.stampede2(71)$ sbatch run_CWB_sims.bash
+
+# check how the job is running
+login4.stampede2(72)$ squeue -j 6757386  
+
+# to exit
+login4.stampede2(40)$ exit
+
+# move the results to your computer
+(base) Meghas-Air:Documents meghajoshi$ scp -r meghaj@stampede2.tacc.utexas.edu:~/cwb/sim_test_1103.Rdata ~/Desktop
+
+
+
+# extra commands
+# if you want to delete the cwb folder in tacc log into tacc
+# make sure you have transferred anything needed to your computer before deleting things :D  
+login2.stampede2(176)$ rm -rf cwb/

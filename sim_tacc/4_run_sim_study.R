@@ -4,6 +4,7 @@ library(mvtnorm)
 library(clubSandwich)
 library(tidyr)
 library(stringr)
+library(tibble)
 
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
@@ -39,6 +40,7 @@ run_sim <- function(iterations,
   require(clubSandwich)
   require(tidyr)
   require(stringr)
+  require(tibble)
   
   if (beta_type %in% c("B1", "B5")){
     
@@ -104,7 +106,7 @@ run_sim <- function(iterations,
                              vcov = cov_mat_cr1,
                              test = "Naive-F", 
                              tidy = TRUE) %>%
-        select(`Naive-F` = p_val)
+        dplyr::select(`Naive-F` = p_val)
       
       
       htz_res <- Wald_test(full_model, 
@@ -112,12 +114,13 @@ run_sim <- function(iterations,
                            vcov = cov_mat_cr2,
                            test = "HTZ", 
                            tidy = TRUE) %>%
-        select(HTZ = p_val)
+        mutate(p_val = ifelse(Fstat < 0, 1, p_val)) %>%  # added this to fix the htz p val issue with negative F stat
+        dplyr::select(HTZ = p_val)
       
 
       # cwb ---------------------------------------------------------------------
       cwb_params <- test_dat %>%
-        select(null_model, indices_test)
+        dplyr::select(null_model, indices_test)
       
       boot_res <- pmap_dfr(cwb_params, 
                            .f = cwb, 
@@ -133,7 +136,7 @@ run_sim <- function(iterations,
     })  %>%
     bind_rows()
   
-  calc_performance(results, iterations)
+  calc_performance(results)
 }
 
 # demonstrate the simulation driver
@@ -144,7 +147,7 @@ run_sim <- function(iterations,
 
 # include design matrix, exclude to_test
 
-set.seed(20201101) # change this seed value!
+set.seed(20201105) # change this seed value!
 
 # now express the simulation parameters as vectors/lists
 
@@ -162,7 +165,7 @@ params <-
   cross_df(design_factors) %>%
   mutate(
     iterations = 100, # change this to how many ever iterations
-    seed = round(runif(1) * 2^30) + 1:1760
+    seed = round(runif(1) * 2^30) + 1:n()
   )
 
 
@@ -171,32 +174,13 @@ params <-
 
 quick_params <- params %>% 
   filter(batch == 1) %>%
-  mutate(R = 2,
+  mutate(R = 399,
          iterations = 2)
 
-glimpse(quick_params)
 
 rm(design_factors, params)
 source_obj <- ls()
 
-source_obj
-
-system.time(
-  results <-
-    quick_params %>%
-    mutate(res = pmap(., .f = run_sim)) %>%
-    unnest(cols = res)
-)
-
-# 2508.889 elapsed on 1023
-# 1528.106 elapsed on 1026
-# 1442.405 elapsed on 1026 afternoon
-# 566.618 elapsed on 1027
-# 323.27 elapsed on 1028 on R 3.6.0 on windows desktop
-# 898.874 on 1030 on mac
-# 316.79 elapsed on 1102 on R 3.6.0 on windows desktop
-
-save(results, file = "../data/res_run_sim_1102.RData")
 
 
 #--------------------------------------------------------
@@ -206,10 +190,7 @@ save(results, file = "../data/res_run_sim_1102.RData")
 library(Pusto)
 
 cluster <- start_parallel(source_obj = source_obj, 
-                          setup = "register",
-                          packages = c("dplyr", "purrr", "mvtnorm",
-                                       "clubSandwich",
-                                       "tidyr", "stringr"))
+                          setup = "register")
 
 
 
@@ -219,6 +200,7 @@ system.time(results <- plyr::mdply(quick_params,
 
 stop_parallel(cluster)
 
+
 #--------------------------------------------------------
 # Save results and details
 #--------------------------------------------------------
@@ -226,4 +208,4 @@ stop_parallel(cluster)
 session_info <- sessionInfo()
 run_date <- date()
 
-save(params, results, session_info, run_date, file = "sim_test_111.Rdata")
+save(quick_params, results, session_info, run_date, file = "sim_test_1105.Rdata")

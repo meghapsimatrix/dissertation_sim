@@ -24,6 +24,16 @@ full_form <- "X1 + X2 + X3 + X4 + X5"
 R <- 399
 
 
+set.seed(11032020)
+
+meta_data <-
+  generate_rmeta(m = 10,
+                 tau = 0.1,
+                 rho = 0.8,
+                 covs = design_mat,
+                 beta_type = "A")
+
+
 # Fit full model on data --------------------------------------------------
 y <- meta_data$g
 v <- meta_data$var_g
@@ -54,6 +64,17 @@ htz_res <- Wald_test(full_model,
                      test = "HTZ", 
                      tidy = TRUE) %>%
   select(HTZ = p_val)
+
+# the last one is NA?
+htz_res %>% View()
+
+Wald_test(full_model, 
+          constraints = constrain_zero(c(2, 3, 4, 5, 6)),
+          vcov = cov_mat_cr2,
+          test = "HTZ")
+
+# Error in symnum(x$p_val, corr = FALSE, na = FALSE, cutpoints = c(0, 0.001,  : 
+# must have 2 'symbols' for logical 'x' argument
 
 
 # cwb ---------------------------------------------------------------------
@@ -90,7 +111,7 @@ res <-
   bind_cols(test_dat %>% select(cov_test, contrasts)) %>%
   gather(test, p_val, -c(cov_test, contrasts))
 
-results <- calc_performance(res, iterations = 1)
+results <- calc_performance(res)
 
 
 

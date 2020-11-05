@@ -61,6 +61,7 @@ robu_handmade <- function(X, y, v, cluster, rho = .8, calc_vcov = NULL) {
   den <- sum(k_j * w_tilde) - trace_product(M_tilde, B_den)
   
   tau_sq <- (QE - num_minus) / den
+  tau_sq <- ifelse(tau_sq < 0, 0, tau_sq)  # added this like robu
   
   # CE weights
   w_j <- 1 / (k_j * (sigma_sq_j + tau_sq))
@@ -107,6 +108,7 @@ update_robu <- function(mod, y, fix_tau_sq = FALSE, calc_CR0 = TRUE) {
     res <- residuals(mod_prelim) 
     QE <- sum(mod$w_tilde_j * res^2)
     tau_sq <- (QE - mod$num_minus) / mod$den
+    tau_sq <- ifelse(tau_sq < 0, 0, tau_sq)  # added this
   }
   
   # CE weights
@@ -156,7 +158,7 @@ mult_mat <- function(x, y) {
 }
 
 
-calculate_F <- function(beta, vcov, constraints, p = 6, test){
+calculate_F <- function(beta, vcov, constraints, test, p = 6){
   
   C_mat <- diag(1L, nrow = p)[constraints,,drop = FALSE]    
   
@@ -180,85 +182,85 @@ cwb <- function(null_model,
                 dat) {
   
   
-    y <- dat$g
-    v <- dat$var_g
+  y <- dat$g
+  v <- dat$var_g
+  
+  X_null <- model.matrix(as.formula(null_model), data = dat)
+  X_full <- model.matrix(as.formula(paste("g ~ ", full_form)), data = dat)
+  
+  cluster <- dat$study
+  
+  null_mod <- robu_handmade(X = X_null, 
+                            y = y, 
+                            v = v, 
+                            cluster = cluster)
+  
+  full_mod_org <- robu_handmade(X = X_full, 
+                                y = y, v = v, 
+                                cluster = cluster, 
+                                calc_vcov = "CR0")
+  
+  cov_mat_org <- full_mod_org$vcov
+  
+  # residuals and transformed residuals -------------------------------------
+  
+  dat$res <- null_mod$residuals
+  dat$pred <- null_mod$fitted.values
+  split_res <- split(dat$res, dat$study)
+  e_tilde_j <- map(split_res, change_to_mat)
+  B_j <- attr(vcovCR(null_mod, 
+                     cluster = cluster, 
+                     type = "CR2", 
+                     inverse_var = TRUE), "adjustments")
+  dat$t_res <- unlist(pmap(list(B_j, e_tilde_j), mult_mat))
+  
+  
+  # Rademacher weights ------------------------------------------------------
+  
+  num_studies <- unique(dat$study)
+  k_j <- as.numeric(table(dat$study))
+  
+  bootstraps <- rerun(.n = R, {
     
-    X_null <- model.matrix(as.formula(null_model), data = dat)
-    X_full <- model.matrix(as.formula(paste("g ~ ", full_form)), data = dat)
+    wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
+    dat$eta <- rep(wts, k_j)
+    new_t <- with(dat, pred + res * eta)
+    new_t_adj <- with(dat, pred + t_res * eta)
     
-    cluster <- dat$study
+    full_mod_cwb <- update_robu(full_mod_org, y = new_t)
+    full_mod_cwb_adj <- update_robu(full_mod_org, y = new_t_adj)
     
-    null_mod <- robu_handmade(X = X_null, 
-                              y = y, 
-                              v = v, 
-                              cluster = cluster)
+    cov_mat_cwb <- full_mod_cwb$vcov
+    cov_mat_cwb_adj <- full_mod_cwb_adj$vcov
     
-    full_mod_org <- robu_handmade(X = X_full, 
-                                  y = y, v = v, 
-                                  cluster = cluster, 
-                                  calc_vcov = "CR0")
+    res <- calculate_F(beta = full_mod_cwb$coefficients, 
+                       vcov = cov_mat_cwb, 
+                       constraints = indices_test, 
+                       test = "CWB")
     
-    cov_mat_org <- full_mod_org$vcov
+    res_adj <- calculate_F(beta = full_mod_cwb_adj$coefficients, 
+                           vcov = cov_mat_cwb_adj, 
+                           constraints = indices_test, 
+                           test = "CWB Adjusted")
     
-    # residuals and transformed residuals -------------------------------------
+    bind_rows(res, res_adj)
     
-    dat$res <- null_mod$residuals
-    dat$pred <- null_mod$fitted.values
-    split_res <- split(dat$res, dat$study)
-    e_tilde_j <- map(split_res, change_to_mat)
-    B_j <- attr(vcovCR(null_mod, 
-                       cluster = cluster, 
-                       type = "CR2", 
-                       inverse_var = TRUE), "adjustments")
-    dat$t_res <- unlist(pmap(list(B_j, e_tilde_j), mult_mat))
-    
-    
-    # Rademacher weights ------------------------------------------------------
-    
-    num_studies <- unique(dat$study)
-    k_j <- as.numeric(table(dat$study))
-    
-    bootstraps <- rerun(.n = R, {
-      
-      wts <- sample(c(-1, 1), size = length(num_studies), replace = TRUE)
-      dat$eta <- rep(wts, k_j)
-      new_t <- with(dat, pred + res * eta)
-      new_t_adj <- with(dat, pred + t_res * eta)
-      
-      full_mod_cwb <- update_robu(full_mod_org, y = new_t)
-      full_mod_cwb_adj <- update_robu(full_mod_org, y = new_t_adj)
-      
-      cov_mat_cwb <- full_mod_cwb$vcov
-      cov_mat_cwb_adj <- full_mod_cwb_adj$vcov
-      
-      res <- calculate_F(beta = full_mod_cwb$coefficients, 
-                         vcov = cov_mat_cwb, 
-                         constraints = indices_test, 
-                         test = "CWB")
-      
-      res_adj <- calculate_F(beta = full_mod_cwb_adj$coefficients, 
-                             vcov = cov_mat_cwb_adj, 
-                             constraints = indices_test, 
-                             test = "CWB Adjusted")
-      
-      bind_rows(res, res_adj)
-      
-    }) %>%
-      bind_rows()
-    
-    
-    
-    org_F <- calculate_F(beta = full_mod_org$coefficients, 
-                         vcov = cov_mat_org, 
-                         constraints = indices_test, 
-                         test = "Naive") %>%
-      pull(Fstat)
+  }) %>%
+    bind_rows()
+  
+  
+  
+  org_F <- calculate_F(beta = full_mod_org$coefficients, 
+                       vcov = cov_mat_org, 
+                       constraints = indices_test, 
+                       test = "Naive") %>%
+    pull(Fstat)
   
   
   p_boot <- 
     bootstraps %>%
     group_by(test) %>%
-    summarize(p_val = mean(Fstat > org_F)) %>%
+    summarize(p_val = mean(Fstat > org_F), .groups = "drop") %>%
     ungroup() %>%
     spread(test, p_val)
   
@@ -266,5 +268,3 @@ cwb <- function(null_model,
   return(p_boot)
   
 }
-
-

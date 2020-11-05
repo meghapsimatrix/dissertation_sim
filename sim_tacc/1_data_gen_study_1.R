@@ -32,18 +32,11 @@ generate_rsmd <- function(delta, k, N, Sigma) {
 
 
 generate_es_num <- function(dat) {
-  
+
    dat$es_num <- sequence(rle(dat$study)$lengths)
-   
-   dat <- dat %>%
-   #   group_by(study) %>%
-   #   mutate(es_num = dplyr::row_number()) %>%
-      ungroup() %>%
-      select(study, es_num, everything())
-   
+
   return(dat)
 }
- 
 
 
 
@@ -118,25 +111,25 @@ generate_rmeta <- function(m,
   # True delta --------------------------------------------------------------
   
   X <- design_mat_all %>%
-    select(starts_with("X")) %>%
+    dplyr::select(starts_with("X")) %>%
     as.matrix()
   
-  # v_j and u_ij terms
+  # v_j 
   v_j <- rnorm(m, 0, tau)  
   study_id <- design_mat_all$study
   v_j_long <- v_j[study_id]
-  #u_ij <- rnorm(m * 10, 0, omega)
+  ##u_ij <- rnorm(m * 10, 0, omega)
   
   true_delta <- tibble(delta = as.vector(X %*% beta) + v_j_long, # is this right??
                        study = study_id) %>%
     group_by(study) %>% 
-    summarize(delta = list(delta)) %>% # unnest does mini tibbles so I did this to get vector
+    summarize(delta = list(delta), .groups = "drop") %>% # unnest does mini tibbles so I did this to get vector
     ungroup() 
   
   # join with the study data 
   study_data <- study_data %>%
     dplyr::left_join(true_delta, by = "study") %>%
-    select(-study)
+    dplyr::select(-study)
   
   if (return_study_params) return(study_data)
   
@@ -149,7 +142,5 @@ generate_rmeta <- function(m,
     generate_es_num() %>%
     dplyr::left_join(design_mat_all, by = c("study", "es_num"))
   
-  
   return(meta_cov_dat)
 }
-

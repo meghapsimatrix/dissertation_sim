@@ -1,0 +1,11 @@
+(base) Meghas-Air:~ meghajoshi$ scp -r meghaj@stampede2.tacc.utexas.edu:~/cwb ~/Documents/cwb
+
+
+login2.stampede2(176)$ rm -rf cwb/
+
+(base) Meghas-Air:~ meghajoshi$ scp -r  ~/Desktop/cwb/ meghaj@stampede2.tacc.utexas.edu:~
+
+(base) Meghas-Air:Documents meghajoshi$ scp -r meghaj@stampede2.tacc.utexas.edu:~/cwb/sim_test_1103.Rdata ~/Desktop
+
+
+squeue -j 6757386  # check how the job is running
