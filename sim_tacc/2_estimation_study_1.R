@@ -196,7 +196,8 @@ cwb <- function(null_model,
                             cluster = cluster)
   
   full_mod_org <- robu_handmade(X = X_full, 
-                                y = y, v = v, 
+                                y = y, 
+                                v = v, 
                                 cluster = cluster, 
                                 calc_vcov = "CR0")
   
@@ -260,7 +261,8 @@ cwb <- function(null_model,
   p_boot <- 
     bootstraps %>%
     group_by(test) %>%
-    summarize(p_val = mean(Fstat > org_F), .groups = "drop") %>%
+    summarize(p_val = mean(Fstat > org_F),
+              .groups = 'drop') %>%
     ungroup() %>%
     spread(test, p_val)
   

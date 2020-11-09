@@ -147,7 +147,7 @@ run_sim <- function(iterations,
 
 # include design matrix, exclude to_test
 
-set.seed(20201105) # change this seed value!
+set.seed(20201108) # change this seed value!
 
 # now express the simulation parameters as vectors/lists
 
@@ -157,14 +157,14 @@ design_factors <- list(
   rho = c(0.5, 0.8),
   R = 399,
   beta_type = c("A", "B1", "B5", "C1", "C5", "D1", "D5", "E1", "E5", "F1", "F5"),
-  batch = 1:10
+  batch = 1:80
 )
 
 # combine into a design set
 params <-
   cross_df(design_factors) %>%
   mutate(
-    iterations = 100, # change this to how many ever iterations
+    iterations = 50, # change this to how many ever iterations
     seed = round(runif(1) * 2^30) + 1:n()
   )
 
@@ -173,10 +173,7 @@ params <-
 # Just checking!! ---------------------------------------------------------
 
 quick_params <- params %>% 
-  filter(batch == 1) %>%
-  mutate(R = 399,
-         iterations = 2)
-
+  filter(batch %in% 1:3)
 
 rm(design_factors, params)
 source_obj <- ls()
@@ -201,6 +198,7 @@ system.time(results <- plyr::mdply(quick_params,
 stop_parallel(cluster)
 
 
+
 #--------------------------------------------------------
 # Save results and details
 #--------------------------------------------------------
@@ -208,4 +206,9 @@ stop_parallel(cluster)
 session_info <- sessionInfo()
 run_date <- date()
 
-save(quick_params, results, session_info, run_date, file = "sim_test_1105.Rdata")
+# batch names 
+which_batches <- unique(quick_params$batch)
+results_file <- paste0("sim_test_", paste(which_batches, collapse = "_"), ".RData")
+
+# save
+save(quick_params, results, session_info, run_date, file = results_file)

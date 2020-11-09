@@ -1,3 +1,5 @@
+library(tidyverse)
+
 load("data/tsl_dat.RData")
 
 tsl_dat <- tsl_dat %>%

@@ -89,6 +89,14 @@ htz_res <- Wald_test(full_model,
 htz_res %>%
   View()
 
+htz_res <- Wald_test(full_model, 
+                     constraints = constrain_zero(test_dat$indices_test),
+                     vcov = cov_mat_cr2,
+                     test = "HTZ", 
+                     tidy = TRUE) %>%
+  mutate(p_val = ifelse(Fstat < 0, 1, p_val)) %>%  # added this to fix the htz p val issue with negative F stat
+  dplyr::select(HTZ = p_val)
+
 
 Wald_test(full_model, 
           constraints = constrain_zero(c(2, 3, 4, 5, 6)),

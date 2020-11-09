@@ -24,14 +24,14 @@ full_form <- "X1 + X2 + X3 + X4 + X5"
 R <- 399
 
 
-set.seed(11032020)
+#set.seed(11032020)
 
-meta_data <-
-  generate_rmeta(m = 10,
-                 tau = 0.1,
-                 rho = 0.8,
-                 covs = design_mat,
-                 beta_type = "A")
+# meta_data <-
+#   generate_rmeta(m = 10,
+#                  tau = 0.1,
+#                  rho = 0.8,
+#                  covs = design_mat,
+#                  beta_type = "A")
 
 
 # Fit full model on data --------------------------------------------------
@@ -102,9 +102,13 @@ boot_res
 # 1502.069  on 1026 afternoon
 # 140.722   on 1027 night
 # 171.116  on 1030
-save(boot_res, file = "../data/boot_res_1102.RData")
+save(boot_res, file = "../data/boot_res_1108.RData")
 
-load("../data/boot_res_1102.RData")
+boot_res_today <- boot_res
+
+load("../data/boot_res_1030.RData")
+
+near(boot_res_today, boot_res)
 
 res <- 
   bind_cols(naive_res, htz_res, boot_res) %>%

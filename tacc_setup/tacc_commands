@@ -43,7 +43,7 @@ login4.stampede2(54)$ vim run_CWB_sims.bash
 # run the bash script
 login4.stampede2(71)$ sbatch run_CWB_sims.bash
 
-# check how the job is running
+# check how the job is running makes sure the number matches the job number :) 
 login4.stampede2(72)$ squeue -j 6757386  
 
 # to exit

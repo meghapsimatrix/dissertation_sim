@@ -4,6 +4,7 @@ library(robumeta)
 library(janitor)
 library(xtable)
 library(clubSandwich)
+library(purrr)
 
 load("../data/tsl_dat_20.RData")
 source("2_estimation_study_1.R")
@@ -13,12 +14,16 @@ robu_comp_tsl <- robu(delta ~ g2age + dv,
                       var.eff.size = v,
                       small = TRUE,
                       data = tsl_dat)
+
 cr2_mat <- vcovCR(robu_comp_tsl, type = "CR2")
 
 X <- model.matrix(as.formula("delta ~ g2age + dv"), data = tsl_dat)
 y <- tsl_dat$delta
 v <- tsl_dat$v
 cluster <- tsl_dat$study
+
+
+robu_comp_tsl
 
 check_tsl <- robu_handmade(X = X, 
                            y = y, 
@@ -29,12 +34,31 @@ check_tsl <- robu_handmade(X = X,
 check_tsl$vcov
 
 near(check_tsl$vcov, cr2_mat)
+near(check_tsl$coefficients, robu_comp_tsl$reg_table$b.r)
 
 
 B_j <- attr(vcovCR(check_tsl, cluster = cluster, type = "CR2", inverse_var = TRUE), "adjustments")
 B_j_club <- attr(vcovCR(robu_comp_tsl, type = "CR2"), "adjustments")
 
 near(B_j[[15]], B_j_club[[15]])
+
+naive_res <- Wald_test(check_tsl, 
+                       constraints = constrain_zero(3:7),
+                       vcov = cr2_mat,
+                       test = "Naive-F", 
+                       tidy = TRUE) %>%
+  dplyr::select(`Naive-F` = p_val)
+
+
+
+
+htz_res <- Wald_test(check_tsl, 
+                     constraints = constrain_zero(3:7),
+                     vcov = cr2_mat,
+                     test = "HTZ", 
+                     tidy = TRUE) %>%
+  mutate(p_val = ifelse(Fstat < 0, 1, p_val)) %>%  # added this to fix the htz p val issue with negative F stat
+  dplyr::select(HTZ = p_val)
 
 
 # check cwb ---------------------------------------------------------------
@@ -66,7 +90,7 @@ system.time(boot_tsl <- cwb(null_model = "g ~ g2age",
     full_form = "g2age + dv", 
     dat = tsl_dat))
 
-save(boot_tsl, file = "../data/tsl_res_1028.RData")
+save(boot_tsl, file = "../data/tsl_res_1108.RData")
 
 
 Wald_test(robu_comp_tsl, 
