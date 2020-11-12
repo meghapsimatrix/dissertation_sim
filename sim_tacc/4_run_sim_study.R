@@ -6,6 +6,8 @@ library(tidyr)
 library(stringr)
 library(tibble)
 
+# batch <- commandArgs()  # command line
+
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
 load("data/to_test.RData")
