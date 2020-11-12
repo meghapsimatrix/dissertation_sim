@@ -9,7 +9,8 @@
 
 
 # log into tacc 
-(base) Meghas-Air:~ meghajoshi$ ssh meghaj@stampede2.tacc.utexas.edu
+(base) Meghas-Air:~ meghajoshi$ 
+
 # it will again ask for password and token
 
 
@@ -44,7 +45,8 @@ login4.stampede2(54)$ vim run_CWB_sims.bash
 login4.stampede2(71)$ sbatch run_CWB_sims.bash
 
 # check how the job is running makes sure the number matches the job number :) 
-login4.stampede2(72)$ squeue -j 6757386  
+login3.stampede2(71)$ squeue -u meghaj  # your user name
+login4.stampede2(72)$ squeue -j 6757386  # to check a specific job plugh in the job number here
 
 # to exit
 login4.stampede2(40)$ exit

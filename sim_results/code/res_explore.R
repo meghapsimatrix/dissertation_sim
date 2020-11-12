@@ -10,6 +10,8 @@ load("sim_results/results/sim_test_4_5_6.RData")
 results_4_5_6 <- results
 load("sim_results/results/sim_test_7_8_9.RData")
 results_7_8_9 <- results
+load("sim_results/results/sim_test_10_11_12.RData")
+results_10_11_12 <- results
 
 
 
@@ -17,7 +19,8 @@ load("sim_tacc/data/to_test.RData")
 
 results <- bind_rows(results_1_2_3,
                      results_4_5_6,
-                     results_7_8_9)
+                     results_7_8_9,
+                     results_10_11_12)
 
 results %>%
   filter(K < 50)
@@ -137,7 +140,7 @@ create_power_graph(dat = small_res_05, beta = "E5", cov = "X4")
 ggsave("sim_results/graphs/power_X4_beta5.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-# Power X4 5 --------------------------------------------------------------
+# Power X4 1 --------------------------------------------------------------
 
 create_power_graph(dat = small_res_05, beta = "E1", cov = "X4")
 
