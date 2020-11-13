@@ -1,26 +1,22 @@
 library(tidyverse)
 
-files <- list.files("sim_results/results", full.names = TRUE)
-str(load(files[1]))
-
-# find an easier way to do this :D
-load("sim_results/results/sim_test_1_2_3.RData")
-results_1_2_3 <- results
-load("sim_results/results/sim_test_4_5_6.RData")
-results_4_5_6 <- results
-load("sim_results/results/sim_test_7_8_9.RData")
-results_7_8_9 <- results
-load("sim_results/results/sim_test_10_11_12.RData")
-results_10_11_12 <- results
-
-
-
 load("sim_tacc/data/to_test.RData")
 
-results <- bind_rows(results_1_2_3,
-                     results_4_5_6,
-                     results_7_8_9,
-                     results_10_11_12)
+
+# load results ------------------------------------------------------------
+
+files <- list.files("sim_results/results", full.names = TRUE)
+
+load_res <- function(file){
+  
+  load(file)
+  results
+  
+}
+
+
+results <- map_dfr(files, load_res)
+
 
 results %>%
   filter(K < 50)
@@ -108,6 +104,10 @@ create_power_graph <- function(dat, beta, cov){
   
 }
 
+
+# The first binary covariate, X1, is a study level covariate with large imbalance, 
+# equaling 1 in 15% of the studies.
+
 create_power_graph(dat = small_res_05, beta = "B5", cov = "X1")
 
 
@@ -118,6 +118,9 @@ create_power_graph(dat = small_res_05, beta = "B1", cov = "X1")
 
 
 # Power X2 5 --------------------------------------------------------------
+# The second binary covariate, X2, is a covariate that varies within studies, 
+# equaling 1 in 10% of the effect size estimates overall and in 0 to 20% 
+# of the effect size estimates within a study.
 
 create_power_graph(dat = small_res_05, beta = "C5", cov = "X2")
 
@@ -127,6 +130,8 @@ create_power_graph(dat = small_res_05, beta = "C1", cov = "X2")
 
 # Power X3 5 --------------------------------------------------------------
 
+# X3 is a normally distributed study level covariate
+
 create_power_graph(dat = small_res_05, beta = "D5", cov = "X3")
 
 # Power X3 1 --------------------------------------------------------------
@@ -134,6 +139,9 @@ create_power_graph(dat = small_res_05, beta = "D5", cov = "X3")
 create_power_graph(dat = small_res_05, beta = "D1", cov = "X3")
 
 # Power X4 5 --------------------------------------------------------------
+
+# X4 is a normally distributed continuous covariate
+# that varies within studies
 
 create_power_graph(dat = small_res_05, beta = "E5", cov = "X4")
 
@@ -145,6 +153,8 @@ ggsave("sim_results/graphs/power_X4_beta5.png", device = "png", dpi = 500, heigh
 create_power_graph(dat = small_res_05, beta = "E1", cov = "X4")
 
 # Power X5 5 --------------------------------------------------------------
+
+# X5 is a continuous, highly skewed covariate that varies within studies
 
 create_power_graph(dat = small_res_05, beta = "F5", cov = "X5")
 
@@ -158,7 +168,8 @@ create_power_graph(dat = small_res_05, beta = "F1", cov = "X5")
 small_res_01 <- results %>%
   group_by(m, tau, rho, cov_test, beta_type, contrasts, test) %>%
   summarize(rej_rate = mean(rej_rate_01),
-            .groups = "drop")
+            .groups = "drop") %>%
+  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all)) 
 
 create_type1_graph(dat = small_res_01, intercept = .01)
 

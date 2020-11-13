@@ -9,7 +9,7 @@
 
 
 # log into tacc 
-(base) Meghas-Air:~ meghajoshi$ 
+(base) Meghas-Air:~ meghajoshi$ ssh meghaj@stampede2.tacc.utexas.edu
 
 # it will again ask for password and token
 
