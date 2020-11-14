@@ -82,6 +82,9 @@ ggsave("sim_results/graphs/type1.png", device = "png", dpi = 500, height = 7, wi
 
 
 
+
+
+
 # Power X1 5 --------------------------------------------------------------
 
 create_power_graph <- function(dat, beta, cov){
@@ -172,4 +175,26 @@ small_res_01 <- results %>%
   mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all)) 
 
 create_type1_graph(dat = small_res_01, intercept = .01)
+
+
+# Power Difference --------------------------------------------------------
+
+small_res_05_diff <- small_res_05 %>%
+  filter(test %in% c("CWB", "HTZ"), beta_type != "A") %>%
+  select(-mcse) %>%
+  spread(test, rej_rate) %>%
+  mutate(power_diff = CWB - HTZ,
+         power_ratio = CWB / HTZ) %>%
+  group_by(m, rho, tau, contrasts) %>%
+  summarize_at(vars(power_diff), mean)
+
+small_res_05_diff %>%
+  filter(power_diff < 0) %>%
+  View()
+
+small_res_05_diff %>%
+  filter(power_ratio < 1) %>%
+  View()
+
+
 
