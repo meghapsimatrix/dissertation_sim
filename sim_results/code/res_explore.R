@@ -56,14 +56,17 @@ summary(small_res_05$mcse)
 
 create_type1_graph <- function(dat, intercept){
   
-  dat %>%
+  dat <- dat %>%
     filter(beta_type == "A") %>%
     mutate(m = paste("m =", m),
-           q = paste("q =", contrasts))  %>%
+           q = paste("q =", contrasts)) %>%
+    filter(test != "Naive-F")
+  
+  dat %>%
     ggplot(aes(x = test, y = rej_rate, fill = test)) + 
     geom_hline(yintercept = intercept, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, .1)) + 
+    scale_y_continuous(breaks = seq(0, .6, .01)) + 
     scale_fill_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate") + 
@@ -192,9 +195,6 @@ small_res_05_diff %>%
   filter(power_diff < 0) %>%
   View()
 
-small_res_05_diff %>%
-  filter(power_ratio < 1) %>%
-  View()
 
 
 
