@@ -18,6 +18,9 @@ load_res <- function(file){
 results <- map_dfr(files, load_res)
 
 
+
+# check iterations --------------------------------------------------------
+
 results %>%
   filter(K < 50)
 
@@ -38,35 +41,78 @@ results <- left_join(results,
                      by = "cov_test")
 
 glimpse(results)
+
+
+# Naive -------------------------------------------------------------------
+
+data_int <- tibble(alpha = c(".01", 
+                             ".05", 
+                             ".10"),
+                   int = c(.01, .05, .10))
+
+naive_dat <- results %>%
+  select(test, beta_type, rho, tau, m, contrasts, starts_with("rej_rate")) %>%
+  filter(test == "Naive-F", beta_type == "A") %>%
+  mutate(m = as.character(m),
+         q = paste("q =", contrasts)) %>%
+  gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
+  mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
+                           alpha == "rej_rate_05" ~ ".05",
+                           alpha == "rej_rate_10" ~ ".10"))  %>%
+  group_by(m, rho, tau, q, alpha) %>%
+  summarize_at(vars(rej_rate), mean) %>%
+  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
+
+summary(naive_dat$mcse)
+
+
+naive_dat %>%
+  ggplot(aes(x = m, y = rej_rate, fill = m)) +
+    geom_hline(data = data_int, aes(yintercept = int), linetype = "dashed") + 
+    geom_boxplot(alpha = .5) + 
+    scale_y_continuous(breaks = seq(0, 1, .1)) + 
+    scale_fill_brewer(palette = "Dark2") +
+    facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
+    labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
   
 
+ggsave("sim_results/graphs/naivef.png", device = "png", dpi = 500, height = 7, width = 12)
 
+
+
+# Rej Rate Mean -----------------------------------------------------------
+
+res_small <- results %>%
+  mutate(m = paste("m =", m),
+         q = paste("q =", contrasts)) %>%
+  gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
+  mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
+                           alpha == "rej_rate_05" ~ ".05",
+                           alpha == "rej_rate_10" ~ ".10")) %>%
+  group_by(m, tau, rho, beta_type, q, test, alpha) %>%
+  summarize(rej_rate = mean(rej_rate),
+            .groups = "drop") %>%
+  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
 
 # Alpha .05 
 
 # Type 1 error ------------------------------------------------------------
 
-small_res_05 <- results %>%
-  group_by(m, tau, rho, cov_test, beta_type, contrasts, test) %>%
-  summarize(rej_rate = mean(rej_rate_05),
-            .groups = "drop") %>%
-  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
 
-summary(small_res_05$mcse)
-
-create_type1_graph <- function(dat, intercept){
+create_type1_graph <- function(dat, intercept, br){
   
   dat <- dat %>%
-    filter(beta_type == "A") %>%
-    mutate(m = paste("m =", m),
-           q = paste("q =", contrasts)) %>%
-    filter(test != "Naive-F")
+    filter(test != "Naive-F",
+           beta_type == "A")
   
   dat %>%
     ggplot(aes(x = test, y = rej_rate, fill = test)) + 
     geom_hline(yintercept = intercept, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, .01)) + 
+    scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_fill_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate") + 
@@ -77,123 +123,57 @@ create_type1_graph <- function(dat, intercept){
 
 
 
-create_type1_graph(dat = small_res_05, intercept = .05)
+create_type1_graph(dat = res_small %>% filter(alpha == ".05"), intercept = .05, br = .02)
 
 
 
 ggsave("sim_results/graphs/type1.png", device = "png", dpi = 500, height = 7, width = 12)
 
+# Type 1 error ------------------------------------------------------------
+# 01
+
+create_type1_graph(dat = res_small %>% filter(alpha == ".01"), intercept = .01, br = .01)
+
+ggsave("sim_results/graphs/type1_01.png", device = "png", dpi = 500, height = 7, width = 12)
+
+# Type 1 error ------------------------------------------------------------
+# 10
 
 
+create_type1_graph(dat = res_small %>% filter(alpha == ".10"), intercept = .10, br = .02)
+
+ggsave("sim_results/graphs/type1_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-
-# Power X1 5 --------------------------------------------------------------
-
-create_power_graph <- function(dat, beta, cov){
-  
-  dat %>%
-    filter(beta_type == beta, str_detect(cov_test, cov)) %>%
-    filter(test != "Naive-F") %>%
-    mutate(m = paste("m =", m),
-           q = paste("q =", contrasts))  %>%
-    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
-    geom_hline(yintercept = .8, linetype = "dashed") + 
-    geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, 1, .1)) +
-    scale_fill_brewer(palette = "Set1") +
-    facet_grid(q ~ m) + 
-    labs(x = "Method", y = paste("Power", beta, cov)) + 
-    theme_bw() +
-    theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
-  
-}
-
-
-# The first binary covariate, X1, is a study level covariate with large imbalance, 
-# equaling 1 in 15% of the studies.
-
-create_power_graph(dat = small_res_05, beta = "B5", cov = "X1")
-
-
-
-# Power X1 1 --------------------------------------------------------------
-
-create_power_graph(dat = small_res_05, beta = "B1", cov = "X1")
-
-
-# Power X2 5 --------------------------------------------------------------
-# The second binary covariate, X2, is a covariate that varies within studies, 
-# equaling 1 in 10% of the effect size estimates overall and in 0 to 20% 
-# of the effect size estimates within a study.
-
-create_power_graph(dat = small_res_05, beta = "C5", cov = "X2")
-
-# Power X2 1 --------------------------------------------------------------
-
-create_power_graph(dat = small_res_05, beta = "C1", cov = "X2")
-
-# Power X3 5 --------------------------------------------------------------
-
-# X3 is a normally distributed study level covariate
-
-create_power_graph(dat = small_res_05, beta = "D5", cov = "X3")
-
-# Power X3 1 --------------------------------------------------------------
-
-create_power_graph(dat = small_res_05, beta = "D1", cov = "X3")
-
-# Power X4 5 --------------------------------------------------------------
-
-# X4 is a normally distributed continuous covariate
-# that varies within studies
-
-create_power_graph(dat = small_res_05, beta = "E5", cov = "X4")
-
-ggsave("sim_results/graphs/power_X4_beta5.png", device = "png", dpi = 500, height = 7, width = 12)
-
-
-# Power X4 1 --------------------------------------------------------------
-
-create_power_graph(dat = small_res_05, beta = "E1", cov = "X4")
-
-# Power X5 5 --------------------------------------------------------------
-
-# X5 is a continuous, highly skewed covariate that varies within studies
-
-create_power_graph(dat = small_res_05, beta = "F5", cov = "X5")
-
-# Power X5 1 --------------------------------------------------------------
-
-create_power_graph(dat = small_res_05, beta = "F1", cov = "X5")
-
-
-# Type 1 error .01 --------------------------------------------------------
-
-small_res_01 <- results %>%
-  group_by(m, tau, rho, cov_test, beta_type, contrasts, test) %>%
-  summarize(rej_rate = mean(rej_rate_01),
-            .groups = "drop") %>%
-  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all)) 
-
-create_type1_graph(dat = small_res_01, intercept = .01)
 
 
 # Power Difference --------------------------------------------------------
 
-small_res_05_diff <- small_res_05 %>%
+power <- res_small %>%
   filter(test %in% c("CWB", "HTZ"), beta_type != "A") %>%
-  select(-mcse) %>%
+  select(-c(starts_with("mcse"))) %>%
   spread(test, rej_rate) %>%
   mutate(power_diff = CWB - HTZ,
          power_ratio = CWB / HTZ) %>%
-  group_by(m, rho, tau, contrasts) %>%
+  group_by(m, rho, tau, alpha, q) %>%
   summarize_at(vars(power_diff), mean)
 
-small_res_05_diff %>%
-  filter(power_diff < 0) %>%
-  View()
+
+power %>%
+  ggplot(aes(x = m, y = power_diff, fill = m)) + 
+  geom_boxplot(alpha = .5) + 
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
+  labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+  theme_bw() +
+  theme(legend.position = "none",
+        plot.caption=element_text(hjust = 0, size = 10))
+
+
+ggsave("sim_results/graphs/power.png", device = "png", dpi = 500, height = 7, width = 12)
+
 
 
 

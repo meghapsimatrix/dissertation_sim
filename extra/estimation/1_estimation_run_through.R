@@ -51,7 +51,7 @@ dat <- meta_data
 full_formula <- "g ~ X1 + X2 + X3 + X4 + X5"
 
 
-full_model <- robu(as.formula(full_formula), 
+full_model <- robu(g ~ 0 + X1 + X2 + X3 + X4 + X5, 
                  studynum = study, 
                  var.eff.size = var_g,
                  small = FALSE,
