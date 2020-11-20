@@ -9,6 +9,7 @@ library(robumeta)
 # output results as tibble or print or both
 # Include the multiplication by CR2 or not
 # better name for the function
+# print out 
 
 
 

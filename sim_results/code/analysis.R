@@ -85,17 +85,34 @@ ggsave("sim_results/graphs/naivef.png", device = "png", dpi = 500, height = 7, w
 
 # Rej Rate Mean -----------------------------------------------------------
 
-res_small <- results %>%
-  mutate(m = paste("m =", m),
-         q = paste("q =", contrasts)) %>%
+
+type1_dat <- results %>%
+    filter(beta_type == "A") %>%
+    mutate(m = paste("m =", m),
+           q = paste("q =", contrasts)) %>%
+    gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
+    mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
+                             alpha == "rej_rate_05" ~ ".05",
+                             alpha == "rej_rate_10" ~ ".10")) %>%
+    group_by(m, tau, rho, q, cov_test, test, alpha) %>% 
+    summarize(rej_rate = mean(rej_rate),
+              .groups = "drop") %>%
+    mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
+
+power_dat <- results %>%
+  filter(beta_type != "A") %>%
+  mutate(q = paste("q =", contrasts),
+         m = as.character(m)) %>%
   gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
   mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
                            alpha == "rej_rate_05" ~ ".05",
                            alpha == "rej_rate_10" ~ ".10")) %>%
-  group_by(m, tau, rho, beta_type, q, test, alpha) %>%
+  group_by(m, tau, rho, q, cov_test, test, alpha) %>% 
   summarize(rej_rate = mean(rej_rate),
             .groups = "drop") %>%
   mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
+  
+
 
 # Alpha .05 
 
@@ -105,8 +122,7 @@ res_small <- results %>%
 create_type1_graph <- function(dat, intercept, br){
   
   dat <- dat %>%
-    filter(test != "Naive-F",
-           beta_type == "A")
+    filter(test != "Naive-F")
   
   dat %>%
     ggplot(aes(x = test, y = rej_rate, fill = test)) + 
@@ -123,16 +139,14 @@ create_type1_graph <- function(dat, intercept, br){
 
 
 
-create_type1_graph(dat = res_small %>% filter(alpha == ".05"), intercept = .05, br = .02)
-
-
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
 
 ggsave("sim_results/graphs/type1.png", device = "png", dpi = 500, height = 7, width = 12)
 
 # Type 1 error ------------------------------------------------------------
 # 01
 
-create_type1_graph(dat = res_small %>% filter(alpha == ".01"), intercept = .01, br = .01)
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
 
 ggsave("sim_results/graphs/type1_01.png", device = "png", dpi = 500, height = 7, width = 12)
 
@@ -140,7 +154,7 @@ ggsave("sim_results/graphs/type1_01.png", device = "png", dpi = 500, height = 7,
 # 10
 
 
-create_type1_graph(dat = res_small %>% filter(alpha == ".10"), intercept = .10, br = .02)
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
 
 ggsave("sim_results/graphs/type1_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
@@ -149,14 +163,22 @@ ggsave("sim_results/graphs/type1_10.png", device = "png", dpi = 500, height = 7,
 
 # Power Difference --------------------------------------------------------
 
-power <- res_small %>%
-  filter(test %in% c("CWB", "HTZ"), beta_type != "A") %>%
+power <- power_dat %>%
+  filter(test %in% c("CWB", "HTZ")) %>%
   select(-c(starts_with("mcse"))) %>%
   spread(test, rej_rate) %>%
   mutate(power_diff = CWB - HTZ,
          power_ratio = CWB / HTZ) %>%
-  group_by(m, rho, tau, alpha, q) %>%
+  group_by(m, rho, tau, alpha, q, cov_test) %>%
   summarize_at(vars(power_diff), mean)
+
+
+# HTZ relative to CWB
+# relative power loss
+# graph for this
+
+# represent beta in facets and separate plots for alpha
+
 
 
 power %>%
@@ -171,10 +193,61 @@ power %>%
   theme(legend.position = "none",
         plot.caption=element_text(hjust = 0, size = 10))
 
+# see what is 
 
 ggsave("sim_results/graphs/power.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
+power_dat <- results %>%
+  filter(beta_type != "A") %>%
+  mutate(q = paste("q =", contrasts),
+         m = as.character(m)) %>%
+  gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
+  mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
+                           alpha == "rej_rate_05" ~ ".05",
+                           alpha == "rej_rate_10" ~ ".10")) %>%
+  group_by(m, tau, rho, q, beta_type, cov_test, test, alpha) %>% 
+  summarize(rej_rate = mean(rej_rate),
+            .groups = "drop") %>%
+  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
+
+power <- power_dat %>%
+  filter(test %in% c("CWB", "HTZ")) %>%
+  select(-c(starts_with("mcse"))) %>%
+  spread(test, rej_rate) %>%
+  mutate(power_diff = CWB - HTZ,
+         power_ratio = CWB / HTZ) %>%
+  group_by(m, rho, tau, alpha, q, cov_test, beta_type) %>%
+  summarize_at(vars(power_diff), mean)
+
+
+
+# Power ratio -------------------------------------------------------------
+
+power_ratio <- power_dat %>%
+  filter(test %in% c("CWB", "HTZ")) %>%
+  select(-c(starts_with("mcse"))) %>%
+  spread(test, rej_rate) %>%
+  mutate(power_diff = CWB - HTZ,
+         power_ratio = CWB / HTZ) %>%
+  group_by(m, rho, tau, alpha, q, cov_test) %>%
+  summarize_at(vars(power_ratio), mean)
+
+
+power_ratio %>%
+  ggplot(aes(x = m, y = power_ratio, fill = m)) + 
+  geom_boxplot(alpha = .5) + 
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
+  labs(x = "Number of Studies", y = "Power ratio: CWB/HTZ") + 
+  theme_bw() +
+  theme(legend.position = "none",
+        plot.caption=element_text(hjust = 0, size = 10))
+
+
+ggsave("sim_results/graphs/power_ratio.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 
