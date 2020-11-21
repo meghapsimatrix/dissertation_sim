@@ -51,7 +51,7 @@ data_int <- tibble(alpha = c(".01",
                    int = c(.01, .05, .10))
 
 naive_dat <- results %>%
-  select(test, beta_type, rho, tau, m, contrasts, starts_with("rej_rate")) %>%
+  select(test, beta_type, cov_test, rho, tau, m, contrasts, starts_with("rej_rate")) %>%
   filter(test == "Naive-F", beta_type == "A") %>%
   mutate(m = as.character(m),
          q = paste("q =", contrasts)) %>%
@@ -59,7 +59,7 @@ naive_dat <- results %>%
   mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
                            alpha == "rej_rate_05" ~ ".05",
                            alpha == "rej_rate_10" ~ ".10"))  %>%
-  group_by(m, rho, tau, q, alpha) %>%
+  group_by(m, rho, tau, q, cov_test, alpha) %>%
   summarize_at(vars(rej_rate), mean) %>%
   mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
 
@@ -196,29 +196,6 @@ power %>%
 # see what is 
 
 ggsave("sim_results/graphs/power.png", device = "png", dpi = 500, height = 7, width = 12)
-
-
-power_dat <- results %>%
-  filter(beta_type != "A") %>%
-  mutate(q = paste("q =", contrasts),
-         m = as.character(m)) %>%
-  gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
-  mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
-                           alpha == "rej_rate_05" ~ ".05",
-                           alpha == "rej_rate_10" ~ ".10")) %>%
-  group_by(m, tau, rho, q, beta_type, cov_test, test, alpha) %>% 
-  summarize(rej_rate = mean(rej_rate),
-            .groups = "drop") %>%
-  mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
-
-power <- power_dat %>%
-  filter(test %in% c("CWB", "HTZ")) %>%
-  select(-c(starts_with("mcse"))) %>%
-  spread(test, rej_rate) %>%
-  mutate(power_diff = CWB - HTZ,
-         power_ratio = CWB / HTZ) %>%
-  group_by(m, rho, tau, alpha, q, cov_test, beta_type) %>%
-  summarize_at(vars(power_diff), mean)
 
 
 
