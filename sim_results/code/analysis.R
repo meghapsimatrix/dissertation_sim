@@ -107,7 +107,7 @@ power_dat <- results %>%
   mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
                            alpha == "rej_rate_05" ~ ".05",
                            alpha == "rej_rate_10" ~ ".10")) %>%
-  group_by(m, tau, rho, q, cov_test, test, alpha) %>% 
+  group_by(m, tau, rho, q, beta_type, cov_test, test, alpha) %>% 
   summarize(rej_rate = mean(rej_rate),
             .groups = "drop") %>%
   mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
@@ -169,7 +169,7 @@ power <- power_dat %>%
   spread(test, rej_rate) %>%
   mutate(power_diff = CWB - HTZ,
          power_ratio = CWB / HTZ) %>%
-  group_by(m, rho, tau, alpha, q, cov_test) %>%
+  group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
   summarize_at(vars(power_diff), mean)
 
 
@@ -180,26 +180,39 @@ power <- power_dat %>%
 # represent beta in facets and separate plots for alpha
 
 
+create_power_graph <- function(dat, alpha_level){
 
-power %>%
-  ggplot(aes(x = m, y = power_diff, fill = m)) + 
-  geom_boxplot(alpha = .5) + 
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-  scale_fill_brewer(palette = "Dark2") +
-  facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
-  labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.caption=element_text(hjust = 0, size = 10))
+  
+  dat %>%
+    filter(alpha == alpha_level) %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    ggplot(aes(x = m, y = power_diff, fill = m)) + 
+    geom_boxplot(alpha = .5) + 
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+    scale_fill_brewer(palette = "Dark2") +
+    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+    
+  }
+  
+  
+create_power_graph(dat = power, alpha_level = ".01")
+ggsave("sim_results/graphs/power_01.png", device = "png", dpi = 500, height = 7, width = 12)
+create_power_graph(dat = power, alpha_level = ".05")
+ggsave("sim_results/graphs/power_05.png", device = "png", dpi = 500, height = 7, width = 12)
+create_power_graph(dat = power, alpha_level = ".10")
+ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
-# see what is 
-
-ggsave("sim_results/graphs/power.png", device = "png", dpi = 500, height = 7, width = 12)
-
-
+summary(power$power_diff)
 
 # Power ratio -------------------------------------------------------------
+
+# the 10 study one throws it off so bad
 
 power_ratio <- power_dat %>%
   filter(test %in% c("CWB", "HTZ")) %>%
@@ -207,24 +220,87 @@ power_ratio <- power_dat %>%
   spread(test, rej_rate) %>%
   mutate(power_diff = CWB - HTZ,
          power_ratio = CWB / HTZ) %>%
-  group_by(m, rho, tau, alpha, q, cov_test) %>%
+  group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
   summarize_at(vars(power_ratio), mean)
 
 
-power_ratio %>%
-  ggplot(aes(x = m, y = power_ratio, fill = m)) + 
-  geom_boxplot(alpha = .5) + 
-  geom_hline(yintercept = 1, linetype = "dashed") +
-  #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-  scale_fill_brewer(palette = "Dark2") +
-  facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
-  labs(x = "Number of Studies", y = "Power ratio: CWB/HTZ") + 
-  theme_bw() +
-  theme(legend.position = "none",
-        plot.caption=element_text(hjust = 0, size = 10))
+create_power_rat_graph <- function(dat, alpha_level){
+  
+  
+  dat %>%
+    filter(alpha == alpha_level) %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    ggplot(aes(x = m, y = power_ratio, fill = m)) + 
+    geom_boxplot(alpha = .5) + 
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+    scale_fill_brewer(palette = "Dark2") +
+    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+  
+}
 
 
-ggsave("sim_results/graphs/power_ratio.png", device = "png", dpi = 500, height = 7, width = 12)
+create_power_rat_graph(power_ratio, alpha_level = ".05")
 
 
 
+# Sensitivity Analyses ---------------------------------------------------
+
+# Alpha .05 
+
+# Type 1 error ------------------------------------------------------------
+
+
+create_type1_rho_graph <- function(dat, intercept, br, rho_val){
+  
+  dat <- dat %>%
+    filter(test != "Naive-F")
+  
+  dat %>%
+    filter(rho == rho_val) %>%
+    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
+    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_boxplot(alpha = .5) + 
+    scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_fill_brewer(palette = "Set1") +
+    facet_grid(q ~ m) + 
+    labs(x = "Method", y = "Type 1 Error Rate") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+}
+
+
+
+
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, rho_val = .8)
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, rho_val = .5)
+
+
+
+create_type1_tau_graph <- function(dat, intercept, br, tau_val){
+  
+  dat <- dat %>%
+    filter(test != "Naive-F")
+  
+  dat %>%
+    filter(tau == tau_val) %>%
+    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
+    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_boxplot(alpha = .5) + 
+    scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_fill_brewer(palette = "Set1") +
+    facet_grid(q ~ m) + 
+    labs(x = "Method", y = "Type 1 Error Rate") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+}
+
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, tau_val = .1)
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, tau_val = .3)
