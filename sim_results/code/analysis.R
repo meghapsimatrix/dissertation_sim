@@ -203,8 +203,10 @@ create_power_graph <- function(dat, alpha_level){
   
 create_power_graph(dat = power, alpha_level = ".01")
 ggsave("sim_results/graphs/power_01.png", device = "png", dpi = 500, height = 7, width = 12)
+
 create_power_graph(dat = power, alpha_level = ".05")
 ggsave("sim_results/graphs/power_05.png", device = "png", dpi = 500, height = 7, width = 12)
+
 create_power_graph(dat = power, alpha_level = ".10")
 ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
