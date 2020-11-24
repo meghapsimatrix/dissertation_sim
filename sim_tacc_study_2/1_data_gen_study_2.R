@@ -2,8 +2,6 @@
 # Data Generating Model
 #------------------------------------------------------
 
-
-
 generate_rsmd <- function(delta, k, N, Sigma) {
   
   # make sure delta is a vector
@@ -55,30 +53,14 @@ generate_rmeta <- function(m,
   # beta --------------------------------------------------------------------
   
   if(beta_type == "A") {
-    beta <- c(.3, 0, 0, 0, 0, 0)
-  } else if(beta_type == "B1"){
-    beta <- c(.3, .1, 0, 0, 0, 0)
+    beta <- c(0, 0, 0, 0, 0)
+  } else if(beta_type == "B5"){
+    beta <- c(0, .5, 0, 0, 0)
   }
 
   
-  beta <- matrix(beta, nrow = 6)
+  beta <- matrix(beta, nrow = 5)
   
-  
-  # Design matrix -----------------------------------------------------------
-  
-  # if m > 20 repeat the design matrix 
-  if (m > 20) {
-    design_mat_all <- map_dfr(seq_len(ceiling(m/20)), function(x) covs)
-  } else {
-    design_mat_all <- covs
-  }
-  
-  all_m <- m * 10
-  
-  design_mat_all <- design_mat_all %>%
-    slice(1:all_m) %>%
-    mutate(study = rep(1:m, each = 10)) %>% 
-    generate_es_num()
   
   # Study data --------------------------------------------------------------
   
@@ -91,11 +73,28 @@ generate_rmeta <- function(m,
     mutate(study = 1:m)
   
   
+  # Design matrix -----------------------------------------------------------
+
+  cat <- LETTERS[1:4]
+  X1 <- sample(cat, m, replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2))
+  X2 <- sample(cat, sum(study_data$k), replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2))
+  
+  design_mat_all <- tibble(X = 1, 
+                           X1 = rep(X1, study_data$k), 
+                           X2 = X2) %>%
+    mutate(study = rep(1:m, study_data$k)) %>% 
+    generate_es_num() %>%
+    dplyr::select(-X2)
+  
+  design_mat_all <- dummy_cols(design_mat_all, select_columns = "X1",
+                               remove_selected_columns = TRUE)
+  
   # True delta --------------------------------------------------------------
   
   X <- design_mat_all %>%
     dplyr::select(starts_with("X")) %>%
     as.matrix()
+  
   
   # v_j 
   v_j <- rnorm(m, 0, tau)  
