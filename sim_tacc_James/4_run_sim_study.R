@@ -4,7 +4,7 @@ library(purrr, warn.conflicts = FALSE, quietly = TRUE)
 # capture batches from the command line
 # args <- commandArgs(trailingOnly = TRUE)
 # batches <- as.integer(args[1]):as.integer(args[2])
-batches <- 1
+batches <- 1:3
 
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
@@ -173,7 +173,7 @@ design_factors <- list(
 params <-
   cross_df(design_factors) %>%
   mutate(
-    iterations = 2, # change this to how many ever iterations
+    iterations = 50, # change this to how many ever iterations
     seed = round(runif(1) * 2^30) + 1:n()
   )
 
