@@ -155,7 +155,6 @@ ggsave("sim_results/graphs/type1_01.png", device = "png", dpi = 500, height = 7,
 # Type 1 error ------------------------------------------------------------
 # 10
 
-
 create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
 
 ggsave("sim_results/graphs/type1_10.png", device = "png", dpi = 500, height = 7, width = 12)
@@ -304,3 +303,51 @@ create_type1_tau_graph <- function(dat, intercept, br){
 create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2)
 
 ggsave("sim_results/graphs/tau_05.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_rho_graph <- function(dat, alpha_level){
+  
+  
+  dat %>%
+    mutate(rho = as.factor(rho)) %>%
+    filter(alpha == alpha_level) %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    ggplot(aes(x = m, y = power_diff, fill = rho)) + 
+    geom_boxplot(alpha = .5) + 
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+    scale_fill_manual(values = c("firebrick3", "firebrick4")) +
+    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    theme_bw() +
+    theme(legend.position = "bottom")
+  
+  
+}
+
+create_power_rho_graph(dat = power, alpha_level = ".05")
+ggsave("sim_results/graphs/rho_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_tau_graph <- function(dat, alpha_level){
+  
+  
+  dat %>%
+    mutate(tau = as.factor(tau)) %>%
+    filter(alpha == alpha_level) %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    ggplot(aes(x = m, y = power_diff, fill = tau)) + 
+    geom_boxplot(alpha = .5) + 
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+    scale_fill_manual(values = c("plum3", "plum4")) +
+    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    theme_bw() +
+    theme(legend.position = "bottom")
+  
+  
+}
+
+create_power_tau_graph(dat = power, alpha_level = ".05")
+ggsave("sim_results/graphs/tau_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
