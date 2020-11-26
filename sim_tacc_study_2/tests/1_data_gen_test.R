@@ -34,7 +34,7 @@ meta_data <-
                  rho = 0.8, 
                  beta_type = "A")
 
-#save(meta_data, file = "../data/meta_data_practice.Rdata")
+#save(meta_data, file = "../data/meta_data_practice_2.Rdata")
 
 
 meta_data <- 

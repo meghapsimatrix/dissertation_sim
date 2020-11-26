@@ -53,13 +53,13 @@ generate_rmeta <- function(m,
   # beta --------------------------------------------------------------------
   
   if(beta_type == "A") {
-    beta <- c(0, 0, 0, 0, 0)
+    beta <- c(0, 0, 0, 0, 0, 0)
   } else if(beta_type == "B5"){
-    beta <- c(0, .5, 0, 0, 0)
+    beta <- c(0, .5, 0, 0, 0, 0)
   }
 
   
-  beta <- matrix(beta, nrow = 5)
+  beta <- matrix(beta, nrow = 6)
   
   
   # Study data --------------------------------------------------------------
@@ -75,9 +75,9 @@ generate_rmeta <- function(m,
   
   # Design matrix -----------------------------------------------------------
 
-  cat <- LETTERS[1:4]
-  X1 <- sample(cat, m, replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2))
-  X2 <- sample(cat, sum(study_data$k), replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2))
+  cat <- LETTERS[1:5]
+  X1 <- sample(cat, m, replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2, 0.2))
+  X2 <- sample(cat, sum(study_data$k), replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2, 0.2))
   
   design_mat_all <- tibble(X = 1, 
                            X1 = rep(X1, study_data$k), 

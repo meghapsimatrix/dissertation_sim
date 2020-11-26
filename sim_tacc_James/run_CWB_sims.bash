@@ -5,7 +5,7 @@
 #SBATCH -p normal 		        # Submit to the 'normal' or 'development' queue
 #SBATCH -N 4                    # Total number of nodes
 #SBATCH -n 272                  # Total number of mpi tasks requested
-#SBATCH -t 36:00:00             # Run time (hh:mm:ss)
+#SBATCH -t 48:00:00             # Run time (hh:mm:ss)
 #SBATCH --mail-user=jepusto@gmail.com
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end

@@ -102,7 +102,9 @@ type1_dat <- results %>%
 power_dat <- results %>%
   filter(beta_type != "A") %>%
   mutate(q = paste("q =", contrasts),
-         m = as.character(m)) %>%
+         m = as.character(m),
+         rho = as.character(rho),
+         tau = as.character(tau)) %>%
   gather(alpha, rej_rate, c(rej_rate_01, rej_rate_05, rej_rate_10)) %>%
   mutate(alpha = case_when(alpha == "rej_rate_01" ~ ".01",
                            alpha == "rej_rate_05" ~ ".05",
@@ -141,7 +143,7 @@ create_type1_graph <- function(dat, intercept, br){
 
 create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
 
-ggsave("sim_results/graphs/type1.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs/type1_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
 # Type 1 error ------------------------------------------------------------
 # 01
@@ -258,51 +260,47 @@ create_power_rat_graph(power_ratio, alpha_level = ".05")
 # Type 1 error ------------------------------------------------------------
 
 
-create_type1_rho_graph <- function(dat, intercept, br, rho_val){
+create_type1_rho_graph <- function(dat, intercept, br){
   
   dat <- dat %>%
     filter(test != "Naive-F")
   
   dat %>%
-    filter(rho == rho_val) %>%
-    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
+    mutate(rho = as.factor(rho)) %>%
+    ggplot(aes(x = test, y = rej_rate, fill = rho)) + 
     geom_hline(yintercept = intercept, linetype = "dashed") + 
-    geom_boxplot(alpha = .5) + 
+    geom_boxplot(alpha = .5, position = "dodge") + 
     scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_brewer(palette = "Set1") +
+    scale_fill_manual(values = c("firebrick3", "firebrick4")) +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate") + 
+    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(rho)) + 
     theme_bw() +
-    theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
+    theme(legend.position = "bottom")
 }
 
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2)
+
+ggsave("sim_results/graphs/rho_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, rho_val = .8)
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, rho_val = .5)
-
-
-
-create_type1_tau_graph <- function(dat, intercept, br, tau_val){
+create_type1_tau_graph <- function(dat, intercept, br){
   
   dat <- dat %>%
     filter(test != "Naive-F")
   
   dat %>%
-    filter(tau == tau_val) %>%
-    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
+    mutate(tau = as.factor(tau)) %>%
+    ggplot(aes(x = test, y = rej_rate, fill = tau)) + 
     geom_hline(yintercept = intercept, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
     scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_brewer(palette = "Set1") +
+    scale_fill_manual(values = c("plum3", "plum4")) +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate") + 
+    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
     theme_bw() +
-    theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
+    theme(legend.position = "bottom")
 }
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, tau_val = .1)
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2, tau_val = .3)
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2)
+
+ggsave("sim_results/graphs/tau_05.png", device = "png", dpi = 500, height = 7, width = 12)

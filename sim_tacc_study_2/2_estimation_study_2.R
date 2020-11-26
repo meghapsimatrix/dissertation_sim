@@ -158,7 +158,7 @@ mult_mat <- function(x, y) {
 }
 
 
-calculate_F <- function(beta, vcov, constraints, test, p = 6){
+calculate_F <- function(beta, vcov, constraints, test, p = 5){
   
   C_mat <- diag(1L, nrow = p)[constraints,,drop = FALSE]    
   
