@@ -258,6 +258,31 @@ create_power_rat_graph(power_ratio, alpha_level = ".05")
 
 # Type 1 error ------------------------------------------------------------
 
+create_type1_tau_graph <- function(dat, intercept, br){
+  
+  dat <- dat %>%
+    filter(test != "Naive-F")
+  
+  dat %>%
+    mutate(tau = as.factor(tau)) %>%
+    ggplot(aes(x = test, y = rej_rate, fill = tau)) + 
+    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_boxplot(alpha = .5) + 
+    scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_fill_manual(values = c("plum3", "plum4")) +
+    facet_grid(q ~ m) + 
+    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
+    theme_bw() +
+    theme(legend.position = "bottom")
+}
+
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
+
+ggsave("sim_results/graphs/tau_05.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+
 
 create_type1_rho_graph <- function(dat, intercept, br){
   
@@ -277,32 +302,43 @@ create_type1_rho_graph <- function(dat, intercept, br){
     theme(legend.position = "bottom")
 }
 
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2)
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
 
 ggsave("sim_results/graphs/rho_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
 
-create_type1_tau_graph <- function(dat, intercept, br){
+
+# Power sensitivity -------------------------------------------------------
+
+
+
+create_power_tau_graph <- function(dat, alpha_level){
   
-  dat <- dat %>%
-    filter(test != "Naive-F")
   
   dat %>%
     mutate(tau = as.factor(tau)) %>%
-    ggplot(aes(x = test, y = rej_rate, fill = tau)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    filter(alpha == alpha_level) %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    ggplot(aes(x = m, y = power_diff, fill = tau)) + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
     scale_fill_manual(values = c("plum3", "plum4")) +
-    facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
+    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
     theme_bw() +
     theme(legend.position = "bottom")
+  
+  
 }
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .2)
+create_power_tau_graph(dat = power, alpha_level = ".05")
+ggsave("sim_results/graphs/tau_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
-ggsave("sim_results/graphs/tau_05.png", device = "png", dpi = 500, height = 7, width = 12)
+create_power_tau_graph(dat = power, alpha_level = ".01")
+create_power_tau_graph(dat = power, alpha_level = ".10")
 
 
 create_power_rho_graph <- function(dat, alpha_level){
@@ -328,26 +364,6 @@ create_power_rho_graph <- function(dat, alpha_level){
 create_power_rho_graph(dat = power, alpha_level = ".05")
 ggsave("sim_results/graphs/rho_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
+create_power_rho_graph(dat = power, alpha_level = ".01")
+create_power_rho_graph(dat = power, alpha_level = ".10")
 
-create_power_tau_graph <- function(dat, alpha_level){
-  
-  
-  dat %>%
-    mutate(tau = as.factor(tau)) %>%
-    filter(alpha == alpha_level) %>%
-    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
-    ggplot(aes(x = m, y = power_diff, fill = tau)) + 
-    geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-    scale_fill_manual(values = c("plum3", "plum4")) +
-    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
-    theme_bw() +
-    theme(legend.position = "bottom")
-  
-  
-}
-
-create_power_tau_graph(dat = power, alpha_level = ".05")
-ggsave("sim_results/graphs/tau_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
