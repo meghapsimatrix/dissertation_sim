@@ -4,7 +4,7 @@ library(purrr, warn.conflicts = FALSE, quietly = TRUE)
 # capture batches from the command line
 # args <- commandArgs(trailingOnly = TRUE)
 # batches <- as.integer(args[1]):as.integer(args[2])
-batches <- 7:12
+batches <- 13:18
 
 # Tipton Pusto design matrix cleaned - clean_design_mat.R
 load("data/design_mat.Rdata")
