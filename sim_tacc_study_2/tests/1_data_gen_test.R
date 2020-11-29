@@ -20,6 +20,7 @@ meta_data <-
   generate_rmeta(m = 10, 
                  tau = 0.1, 
                  rho = 0.8, 
+                 cov_type = "between",
                  beta_type = "A")
 
 
@@ -32,6 +33,7 @@ meta_data <-
   generate_rmeta(m = 80, 
                  tau = 0.4, 
                  rho = 0.8, 
+                 cov_type = "between",
                  beta_type = "A")
 
 #save(meta_data, file = "../data/meta_data_practice_2.Rdata")
@@ -41,7 +43,7 @@ meta_data <-
   generate_rmeta(m = 10, 
                  tau = 0.1, 
                  rho = 0.5, 
-                 covs = design_mat,
+                 cov_type = "between",
                  beta_type = "A")
 
 # generate meta data 
@@ -53,6 +55,7 @@ meta_data_params <-
   generate_rmeta(m = 80, 
                  tau = 0.4, 
                  rho = 0.8, 
+                 cov_type = "between",
                  beta_type = "A", 
                  return_study_params = TRUE)
 
@@ -68,6 +71,7 @@ big_meta <-
   generate_rmeta(m = 1000, 
                  tau = 0.1, 
                  rho = 0.8, 
+                 cov_type = "between",
                  beta_type = "B5",
                  return_study_params = FALSE)
 
@@ -84,7 +88,7 @@ study_features <-
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
                  rho = 0.6, 
-                 covs = design_mat,
+                 cov_type = "between",
                  beta_type = "A",
                  return_study_params = TRUE)
 
@@ -126,6 +130,7 @@ meta_data <-
   generate_rmeta(m = 1000, 
                  tau = 0.05, 
                  rho = 0.6, 
+                 cov_type = "between",
                  beta_type = "B5")
 
 

@@ -8,17 +8,13 @@ library(tibble)
 
 # batch <- commandArgs()  # command line
 
-# Tipton Pusto design matrix cleaned - clean_design_mat.R
-load("data/design_mat.Rdata")
-load("data/to_test.RData")
-
 #-----------------------------------------------------------
 # Source the functions
 #-----------------------------------------------------------
 
-source("1_data_gen_study_1.R")
-source("2_estimation_study_1.R")
-source("3_performance_criteria.R")
+source("1_data_gen_study_2.R")
+source("2_estimation_study_2.R")
+source("3_performance_criteria_2.R")
 
 #-----------------------------------------------------------
 # Simulation Driver - should return a data.frame or tibble
@@ -28,7 +24,8 @@ run_sim <- function(iterations,
                     m, 
                     tau, 
                     rho, 
-                    beta_type, 
+                    beta_type,
+                    cov_type,
                     batch,
                     R,
                     indices_test = 2:5,
@@ -53,7 +50,7 @@ run_sim <- function(iterations,
       meta_data <- generate_rmeta(m = m, 
                                   tau = tau, 
                                   rho = rho,
-                                  covs = design_matrix,
+                                  cov_type = cov_type,
                                   beta_type = beta_type)
       
       # Fit full model on data --------------------------------------------------
@@ -88,14 +85,14 @@ run_sim <- function(iterations,
 
       # cwb ---------------------------------------------------------------------
       system.time(boot_res <- cwb(null_model = "g ~ 1", 
-                             indices_test = indices_test, 
-                             full_form = full_form, 
-                             R = R, dat = meta_data))
+                                  indices_test = indices_test, 
+                                  full_form = full_form, 
+                                  R = R, 
+                                  dat = meta_data))
       
       res <- 
         bind_cols(naive_res, htz_res, boot_res) %>%
-        bind_cols(test_dat %>% dplyr::select(cov_test)) %>%
-        gather(test, p_val, -c(cov_test))
+        gather(test, p_val)
       
     })  %>%
     bind_rows()
@@ -116,9 +113,10 @@ set.seed(20201108) # change this seed value!
 # now express the simulation parameters as vectors/lists
 
 design_factors <- list(
-  m = c(10, 20, 40, 80), 
+  m = c(20, 40, 80), 
   tau = c(0.1, 0.3),
   rho = c(0.5, 0.8),
+  cov_type = c("between", "within"),
   R = 399,
   beta_type = c("A", "B5"),
   batch = 1:48
@@ -136,8 +134,12 @@ params <-
 
 # Just checking!! ---------------------------------------------------------
 
+# elapsed 29.478 not parallel on my mac
+
 quick_params <- params %>% 
-  filter(batch %in% 1:3)
+  filter(batch == 1) %>%
+  mutate(R = 2, 
+         iterations = 2)
 
 rm(design_factors, params)
 source_obj <- ls()
@@ -161,6 +163,9 @@ system.time(results <- plyr::mdply(quick_params,
 
 stop_parallel(cluster)
 
+# When I have conditions with 10 studies for between 
+# Error in do.ply(i) : 
+#   task 1 failed - "the leading minor of order 3 is not positive definite"
 
 
 #--------------------------------------------------------

@@ -41,7 +41,7 @@ generate_es_num <- function(dat) {
 generate_rmeta <- function(m, 
                            tau, 
                            rho, 
-                           covs, 
+                           cov_type,
                            beta_type = "A",
                            k_mean = 4,
                            N_mean = 30,
@@ -76,15 +76,26 @@ generate_rmeta <- function(m,
   # Design matrix -----------------------------------------------------------
 
   cat <- LETTERS[1:5]
-  X1 <- sample(cat, m, replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2, 0.2))
-  X2 <- sample(cat, sum(study_data$k), replace = TRUE, prob = c(0.2, 0.2, 0.2, 0.2, 0.2))
   
-  design_mat_all <- tibble(X = 1, 
-                           X1 = rep(X1, study_data$k), 
-                           X2 = X2) %>%
+  if(cov_type == "between"){
+    
+    X1 <- c(sample(cat), sample(cat, size = m - length(cat), replace = TRUE))
+    
+    design_mat_all <- tibble(X = 1, 
+                             X1 = rep(X1, study_data$k)) 
+    
+  } else if(cov_type == "within"){
+    
+    X1 <- c(sample(cat), sample(cat, size = sum(study_data$k) - length(cat), replace = TRUE))
+    
+    design_mat_all <- tibble(X = 1, 
+                             X1 = X1) 
+    
+  }
+  
+  design_mat_all <- design_mat_all %>%
     mutate(study = rep(1:m, study_data$k)) %>% 
-    generate_es_num() %>%
-    dplyr::select(-X2)
+    generate_es_num()
   
   design_mat_all <- dummy_cols(design_mat_all, select_columns = "X1",
                                remove_selected_columns = TRUE)
