@@ -107,6 +107,7 @@ type1_dat <- results %>%
 
 type1_dat %>%
   ungroup() %>%
+  filter(test != "Naive-F") %>%
   group_by(alpha) %>%
   summarize(min = min(mcse),
             max = max(mcse))
@@ -128,7 +129,7 @@ power_dat <- results %>%
   
 power_dat %>%
   ungroup() %>%
-  group_by(alpha) %>%
+  group_by(test, beta_type, alpha) %>%
   summarize(min = min(mcse),
             max = max(mcse))
 
