@@ -82,6 +82,11 @@ naive_dat %>%
 ggsave("sim_results/graphs/naivef.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
+naive_dat %>%
+  ungroup() %>%
+  group_by(alpha) %>%
+  summarize(min = min(mcse),
+            max = max(mcse))
 
 # Rej Rate Mean -----------------------------------------------------------
 
@@ -99,6 +104,13 @@ type1_dat <- results %>%
               .groups = "drop") %>%
     mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
 
+
+type1_dat %>%
+  ungroup() %>%
+  group_by(alpha) %>%
+  summarize(min = min(mcse),
+            max = max(mcse))
+
 power_dat <- results %>%
   filter(beta_type != "A") %>%
   mutate(q = paste("q =", contrasts),
@@ -114,6 +126,11 @@ power_dat <- results %>%
             .groups = "drop") %>%
   mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
   
+power_dat %>%
+  ungroup() %>%
+  group_by(alpha) %>%
+  summarize(min = min(mcse),
+            max = max(mcse))
 
 
 # Alpha .05 
