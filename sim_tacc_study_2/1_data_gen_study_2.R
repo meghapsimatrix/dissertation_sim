@@ -79,7 +79,10 @@ generate_rmeta <- function(m,
   
   if(cov_type == "between"){
     
-    X1 <- c(sample(cat), sample(cat, size = m - length(cat), replace = TRUE))
+    rep_times <- m/length(cat)
+    var <- rep(cat, each = rep_times)
+
+    X1 <- sample(var)
     
     design_mat_all <- tibble(X = 1, 
                              X1 = rep(X1, study_data$k)) 

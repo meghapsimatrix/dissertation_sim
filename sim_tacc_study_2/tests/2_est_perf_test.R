@@ -9,7 +9,7 @@ load("../data/meta_data_practice_2.Rdata")
 
 
 source("2_estimation_study_2.R")
-source("3_performance_criteria.R")
+source("3_performance_criteria_2.R")
 source("1_data_gen_study_2.R")
 
 

@@ -39,6 +39,7 @@ run_sim <- function(iterations,
   require(tidyr)
   require(stringr)
   require(tibble)
+  require(fastDummies)
   
   if (!is.null(seed)) set.seed(seed)
 
@@ -108,12 +109,12 @@ run_sim <- function(iterations,
 
 # include design matrix, exclude to_test
 
-set.seed(20201108) # change this seed value!
+set.seed(20201130) # change this seed value!
 
 # now express the simulation parameters as vectors/lists
 
 design_factors <- list(
-  m = c(20, 40, 80), 
+  m = c(10, 20, 40, 80), 
   tau = c(0.1, 0.3),
   rho = c(0.5, 0.8),
   cov_type = c("between", "within"),
@@ -134,12 +135,11 @@ params <-
 
 # Just checking!! ---------------------------------------------------------
 
-# elapsed 29.478 not parallel on my mac
+# 75.11 with 4 cores on pc parallel - 2 iterations 399 bootstrap reps
 
 quick_params <- params %>% 
   filter(batch == 1) %>%
-  mutate(R = 2, 
-         iterations = 2)
+  mutate(iterations = 2)
 
 rm(design_factors, params)
 source_obj <- ls()
@@ -163,9 +163,6 @@ system.time(results <- plyr::mdply(quick_params,
 
 stop_parallel(cluster)
 
-# When I have conditions with 10 studies for between 
-# Error in do.ply(i) : 
-#   task 1 failed - "the leading minor of order 3 is not positive definite"
 
 
 #--------------------------------------------------------
@@ -177,7 +174,7 @@ run_date <- date()
 
 # batch names 
 which_batches <- unique(quick_params$batch)
-results_file <- paste0("sim_test_2_", paste(which_batches, collapse = "_"), ".RData")
+results_file <- paste0("sim_test2_", paste(which_batches, collapse = "_"), ".RData")
 
 # save
 save(quick_params, results, session_info, run_date, file = results_file)

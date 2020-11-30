@@ -23,6 +23,14 @@ meta_data <-
                  cov_type = "between",
                  beta_type = "A")
 
+meta_data_w <- 
+  generate_rmeta(m = 10, 
+                 tau = 0.1, 
+                 rho = 0.8, 
+                 cov_type = "within",
+                 beta_type = "A")
+
+
 
 # generate meta data 
 set.seed(342020)
@@ -144,7 +152,7 @@ head(V_mat)
 
 meta_data %>%
   group_by(study) %>%
- summarize(n = n()) %>% 
+  summarize(n = n()) %>% 
   View()
 
 
