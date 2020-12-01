@@ -5,6 +5,7 @@ library(clubSandwich)
 library(tidyr)
 library(stringr)
 library(tibble)
+library(fastDummies)
 
 # batch <- commandArgs()  # command line
 
