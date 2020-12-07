@@ -59,8 +59,10 @@ run_sim <- function(iterations,
       
 
       # Equation ----------------------------------------------------------------
-      full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")], collapse = " + ")
-
+      # JAMES CHECK
+      
+      full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")][-1], 
+                         collapse = " + ")
       
       indices_test <- 2:cat_num
       
@@ -153,8 +155,7 @@ params <-
 
 quick_params <- params %>% 
   filter(batch == 1) %>%
-  mutate(iterations = 2,
-         R = 2)
+  mutate(iterations = 2)
 
 rm(design_factors, params)
 source_obj <- ls()
