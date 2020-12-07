@@ -6,16 +6,15 @@ library(tidyr)
 library(stringr)
 
 load("../data/meta_data_practice_2.Rdata")
-load("../data/big_meta_2.Rdata")
 
 
 source("2_estimation_study_2.R")
 source("3_performance_criteria_study_2.R")
 source("1_data_gen_study_2.R")
 
-meta_data <- big_meta
 
-cat_num <- 4
+
+cat_num <- 5
 full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")], collapse = " + ")
 indices_test <- 2:cat_num
 

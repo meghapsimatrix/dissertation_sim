@@ -59,8 +59,10 @@ run_sim <- function(iterations,
       
 
       # Equation ----------------------------------------------------------------
-      full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")], collapse = " + ")
-
+      # JAMES CHECK
+      
+      full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")][-1], 
+                         collapse = " + ")
       
       indices_test <- 2:cat_num
       

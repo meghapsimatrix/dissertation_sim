@@ -60,7 +60,7 @@ meta_data <-
                  cat_num = 5,
                  beta_type = "A")
 
-#save(meta_data, file = "../data/meta_data_practice_2.Rdata")
+save(meta_data, file = "../data/meta_data_practice_2.Rdata")
 
 
 
