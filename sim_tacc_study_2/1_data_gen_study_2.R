@@ -93,8 +93,8 @@ generate_rmeta <- function(m,
     
   } else if(cov_type == "within"){
     
-    X1 <- c(rep(cat, each = min_times), sample(cat, size = sum(study_data$k) - min_times * cat_num, replace = TRUE))
-    X1 <- sample(X1)
+    cat_var <- c(rep(cat, each = min_times), sample(cat, size = sum(study_data$k) - min_times * cat_num, replace = TRUE))
+    X1 <- sample(cat_var)
     
     design_mat_all <- tibble(X = 1, 
                              X1 = X1) 
