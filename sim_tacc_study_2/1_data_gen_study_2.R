@@ -58,7 +58,7 @@ generate_rmeta <- function(m,
   if (beta_type == "A") {
     beta <- c(.3, 0, rep(0, cat_num - 2))
   } else if(beta_type == "B5"){
-    beta <- c(0, .5, rep(0, cat_num - 2))
+    beta <- c(.3, .5, rep(0, cat_num - 2))
   }
 
   

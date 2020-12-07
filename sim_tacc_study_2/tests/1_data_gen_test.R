@@ -97,6 +97,9 @@ big_meta <-
                  beta_type = "B5",
                  return_study_params = FALSE)
 
+save(big_meta, file = "../data/big_meta.Rdata")
+
+
 mean(big_meta$var_g)
 hist(big_meta$var_g)
 
