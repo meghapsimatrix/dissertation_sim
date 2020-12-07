@@ -42,6 +42,7 @@ generate_rmeta <- function(m,
                            tau, 
                            rho, 
                            cov_type,
+                           cat_num,
                            beta_type = "A",
                            k_mean = 4,
                            N_mean = 30,
@@ -52,14 +53,16 @@ generate_rmeta <- function(m,
   
   # beta --------------------------------------------------------------------
   
-  if(beta_type == "A") {
-    beta <- c(0, 0, 0, 0, 0, 0)
+  # JAMES PLEASE CHECK
+
+  if (beta_type == "A") {
+    beta <- c(.3, 0, rep(0, cat_num - 2))
   } else if(beta_type == "B5"){
-    beta <- c(0, .5, 0, 0, 0, 0)
+    beta <- c(0, .5, rep(0, cat_num - 2))
   }
 
   
-  beta <- matrix(beta, nrow = 6)
+  beta <- matrix(beta, nrow = cat_num)
   
   
   # Study data --------------------------------------------------------------
@@ -75,21 +78,23 @@ generate_rmeta <- function(m,
   
   # Design matrix -----------------------------------------------------------
 
-  cat <- LETTERS[1:5]
+  # JAMES PLEASE CHECK
   
-  if(cov_type == "between"){
-    
-    rep_times <- m/length(cat)
-    var <- rep(cat, each = rep_times)
-
-    X1 <- sample(var)
+  cat <- LETTERS[1:cat_num]
+  min_times <- 2
+  
+  if(cov_type == "between") {
+  
+    cat_var <- c(rep(cat, each = min_times), sample(cat, size = m - min_times * cat_num, replace = TRUE))
+    X1 <- sample(cat_var)
     
     design_mat_all <- tibble(X = 1, 
                              X1 = rep(X1, study_data$k)) 
     
   } else if(cov_type == "within"){
     
-    X1 <- c(sample(cat), sample(cat, size = sum(study_data$k) - length(cat), replace = TRUE))
+    X1 <- c(rep(cat, each = min_times), sample(cat, size = sum(study_data$k) - min_times * cat_num, replace = TRUE))
+    X1 <- sample(X1)
     
     design_mat_all <- tibble(X = 1, 
                              X1 = X1) 
@@ -101,7 +106,8 @@ generate_rmeta <- function(m,
     generate_es_num()
   
   design_mat_all <- dummy_cols(design_mat_all, select_columns = "X1",
-                               remove_selected_columns = TRUE)
+                               remove_selected_columns = TRUE) %>%
+    select(-X1_A)
   
   # True delta --------------------------------------------------------------
   

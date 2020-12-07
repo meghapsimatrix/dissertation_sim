@@ -3,18 +3,22 @@ library(purrr)
 library(mvtnorm)
 library(clubSandwich)
 library(tidyr)
-
+library(stringr)
 
 load("../data/meta_data_practice_2.Rdata")
+load("../data/big_meta_2.Rdata")
 
 
 source("2_estimation_study_2.R")
-source("3_performance_criteria_2.R")
+source("3_performance_criteria_study_2.R")
 source("1_data_gen_study_2.R")
 
+meta_data <- big_meta
 
+cat_num <- 4
+full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")], collapse = " + ")
+indices_test <- 2:cat_num
 
-full_form <- "X1_B + X1_C + X1_D + X1_E"
 R <- 399
 
 
@@ -44,7 +48,7 @@ cov_mat_cr2 <- vcovCR(full_model, type = "CR2", cluster = cluster)
 
 # get naive and htz -------------------------------------------------------
 naive_res <- Wald_test(full_model, 
-                       constraints = constrain_zero(2:5),
+                       constraints = constrain_zero(indices_test),
                        vcov = cov_mat_cr1,
                        test = "Naive-F", 
                        tidy = TRUE) %>%
@@ -52,11 +56,12 @@ naive_res <- Wald_test(full_model,
 
 
 htz_res <- Wald_test(full_model, 
-                     constraints = constrain_zero(2:5),
+                     constraints = constrain_zero(indices_test),
                      vcov = cov_mat_cr2,
                      test = "HTZ", 
                      tidy = TRUE) %>%
-  select(HTZ = p_val)
+  select(HTZ = p_val) %>%
+  as.data.frame()
 
 # the last one is NA?
 htz_res %>% View()
@@ -69,6 +74,9 @@ htz_res %>% View()
 full_model$coefficients
 
 system.time(res <- cwb(null_model = "g ~ 1", 
-                indices_test = 2:5, 
-                full_form = full_form, 
-                R = R, dat = meta_data))
+                       indices_test = indices_test, 
+                       full_form = full_form, 
+                       R = R, 
+                       cat_num = cat_num,
+                       dat = meta_data))
+

@@ -15,7 +15,7 @@ library(fastDummies)
 
 source("1_data_gen_study_2.R")
 source("2_estimation_study_2.R")
-source("3_performance_criteria_2.R")
+source("3_performance_criteria_study_2.R")
 
 #-----------------------------------------------------------
 # Simulation Driver - should return a data.frame or tibble
@@ -25,12 +25,12 @@ run_sim <- function(iterations,
                     m, 
                     tau, 
                     rho, 
-                    beta_type,
                     cov_type,
+                    cat_num,
+                    beta_type,
                     batch,
                     R,
-                    indices_test = 2:5,
-                    full_form = "X1_B + X1_C + X1_D + X1_E", 
+                    F_test_type = c("EDT","HTZ"),
                     seed = NULL) {
   
   require(dplyr)
@@ -41,6 +41,7 @@ run_sim <- function(iterations,
   require(stringr)
   require(tibble)
   require(fastDummies)
+  
   
   if (!is.null(seed)) set.seed(seed)
 
@@ -53,7 +54,15 @@ run_sim <- function(iterations,
                                   tau = tau, 
                                   rho = rho,
                                   cov_type = cov_type,
+                                  cat_num = cat_num,
                                   beta_type = beta_type)
+      
+
+      # Equation ----------------------------------------------------------------
+      full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")], collapse = " + ")
+
+      
+      indices_test <- 2:cat_num
       
       # Fit full model on data --------------------------------------------------
       y <- meta_data$g
@@ -79,10 +88,11 @@ run_sim <- function(iterations,
       htz_res <- Wald_test(full_model, 
                            constraints = constrain_zero(indices_test),
                            vcov = cov_mat_cr2,
-                           test = "HTZ", 
+                           test = F_test_type, 
                            tidy = TRUE) %>%
         mutate(p_val = ifelse(Fstat < 0, 1, p_val)) %>%  # added this to fix the htz p val issue with negative F stat
-        dplyr::select(HTZ = p_val)
+        dplyr::select(test, p_val) %>%
+        spread(key = test, value = p_val)
       
 
       # cwb ---------------------------------------------------------------------
@@ -90,6 +100,7 @@ run_sim <- function(iterations,
                                   indices_test = indices_test, 
                                   full_form = full_form, 
                                   R = R, 
+                                  cat_num = cat_num,
                                   dat = meta_data))
       
       res <- 
@@ -119,8 +130,9 @@ design_factors <- list(
   tau = c(0.1, 0.3),
   rho = c(0.5, 0.8),
   cov_type = c("between", "within"),
-  R = 399,
+  cat_num = 3:5,
   beta_type = c("A", "B5"),
+  R = 399,
   batch = 1:48
 )
 
@@ -136,11 +148,13 @@ params <-
 
 # Just checking!! ---------------------------------------------------------
 
-# 75.11 with 4 cores on pc parallel - 2 iterations 399 bootstrap reps
+# 1028.848 on mac not parallel
+# 195.73 on windows 4 cores parallel
 
 quick_params <- params %>% 
   filter(batch == 1) %>%
-  mutate(iterations = 2)
+  mutate(iterations = 2,
+         R = 2)
 
 rm(design_factors, params)
 source_obj <- ls()

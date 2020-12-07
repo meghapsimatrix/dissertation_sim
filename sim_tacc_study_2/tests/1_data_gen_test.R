@@ -16,19 +16,34 @@ source("1_data_gen_study_2.R")
 
 set.seed(509985477)
 
+m <- 10
+tau <- 0.1
+rho <- 0.8
+cov_type <- "between"
+cat_num <- 3
+beta_type <- "A"
+beta_type = "A"
+k_mean = 4
+N_mean = 30
+nu = 50
+
+
 meta_data <- 
   generate_rmeta(m = 10, 
                  tau = 0.1, 
                  rho = 0.8, 
                  cov_type = "between",
+                 cat_num = 3,
                  beta_type = "A")
 
 meta_data_w <- 
   generate_rmeta(m = 10, 
                  tau = 0.1, 
                  rho = 0.8, 
+                 cat_num = 5,
                  cov_type = "within",
                  beta_type = "A")
+
 
 
 
@@ -42,17 +57,12 @@ meta_data <-
                  tau = 0.4, 
                  rho = 0.8, 
                  cov_type = "between",
+                 cat_num = 5,
                  beta_type = "A")
 
 #save(meta_data, file = "../data/meta_data_practice_2.Rdata")
 
 
-meta_data <- 
-  generate_rmeta(m = 10, 
-                 tau = 0.1, 
-                 rho = 0.5, 
-                 cov_type = "between",
-                 beta_type = "A")
 
 # generate meta data 
 set.seed(342020)
@@ -64,14 +74,17 @@ meta_data_params <-
                  tau = 0.4, 
                  rho = 0.8, 
                  cov_type = "between",
-                 beta_type = "A", 
+                 cat_num = 5, 
+                 beta_type = "B5", 
                  return_study_params = TRUE)
 
 check <- meta_data %>%
   group_by(study) %>%
   summarize(n = n())
 
-meta_data <- left_join(meta_data, meta_data_params %>% select(k, N) %>% mutate(study = 1:80))
+meta_data <- left_join(meta_data, 
+                       meta_data_params %>% select(k, N) %>% 
+                         mutate(study = 1:80))
 
 
 
@@ -80,11 +93,14 @@ big_meta <-
                  tau = 0.1, 
                  rho = 0.8, 
                  cov_type = "between",
+                 cat_num = 4,
                  beta_type = "B5",
                  return_study_params = FALSE)
 
 mean(big_meta$var_g)
 hist(big_meta$var_g)
+
+glimpse(big_meta)
 
 # Study design features ---------------------------------------------------
 
@@ -97,6 +113,7 @@ study_features <-
                  tau = 0.05, 
                  rho = 0.6, 
                  cov_type = "between",
+                 cat_num = 5,
                  beta_type = "A",
                  return_study_params = TRUE)
 
@@ -139,6 +156,7 @@ meta_data <-
                  tau = 0.05, 
                  rho = 0.6, 
                  cov_type = "between",
+                 cat_num = 5,
                  beta_type = "B5")
 
 

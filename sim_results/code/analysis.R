@@ -182,54 +182,54 @@ ggsave("sim_results/graphs/type1_10.png", device = "png", dpi = 500, height = 7,
 
 # Power Difference --------------------------------------------------------
 
-power <- power_dat %>%
-  filter(test %in% c("CWB", "HTZ")) %>%
-  select(-c(starts_with("mcse"))) %>%
-  spread(test, rej_rate) %>%
-  mutate(power_diff = CWB - HTZ,
-         power_ratio = CWB / HTZ) %>%
-  group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
-  summarize_at(vars(power_diff), mean)
+# power <- power_dat %>%
+#   filter(test %in% c("CWB", "HTZ")) %>%
+#   select(-c(starts_with("mcse"))) %>%
+#   spread(test, rej_rate) %>%
+#   mutate(power_diff = CWB - HTZ,
+#          power_ratio = CWB / HTZ) %>%
+#   group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
+#   summarize_at(vars(power_diff), mean)
+# 
+# 
+# # HTZ relative to CWB
+# # relative power loss
+# # graph for this
+# 
+# # represent beta in facets and separate plots for alpha
+# 
+# 
+# create_power_graph <- function(dat, alpha_level){
+# 
+#   
+#   dat %>%
+#     filter(alpha == alpha_level) %>%
+#     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+#     ggplot(aes(x = m, y = power_diff, fill = m)) + 
+#     geom_boxplot(alpha = .5) + 
+#     geom_hline(yintercept = 0, linetype = "dashed") +
+#     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+#     scale_fill_brewer(palette = "Dark2") +
+#     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+#     labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+#     theme_bw() +
+#     theme(legend.position = "none",
+#           plot.caption=element_text(hjust = 0, size = 10))
+#   
+#     
+#   }
+#   
+#   
+# create_power_graph(dat = power, alpha_level = ".01")
+# ggsave("sim_results/graphs/power_01.png", device = "png", dpi = 500, height = 7, width = 12)
+# 
+# create_power_graph(dat = power, alpha_level = ".05")
+# ggsave("sim_results/graphs/power_05.png", device = "png", dpi = 500, height = 7, width = 12)
+# 
+# create_power_graph(dat = power, alpha_level = ".10")
+# ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
-
-# HTZ relative to CWB
-# relative power loss
-# graph for this
-
-# represent beta in facets and separate plots for alpha
-
-
-create_power_graph <- function(dat, alpha_level){
-
-  
-  dat %>%
-    filter(alpha == alpha_level) %>%
-    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
-    ggplot(aes(x = m, y = power_diff, fill = m)) + 
-    geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-    scale_fill_brewer(palette = "Dark2") +
-    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
-    theme_bw() +
-    theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
-  
-    
-  }
-  
-  
-create_power_graph(dat = power, alpha_level = ".01")
-ggsave("sim_results/graphs/power_01.png", device = "png", dpi = 500, height = 7, width = 12)
-
-create_power_graph(dat = power, alpha_level = ".05")
-ggsave("sim_results/graphs/power_05.png", device = "png", dpi = 500, height = 7, width = 12)
-
-create_power_graph(dat = power, alpha_level = ".10")
-ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
-
-summary(power$power_diff)
+#summary(power$power_diff)
 
 # Power ratio -------------------------------------------------------------
 
@@ -240,7 +240,7 @@ power_ratio <- power_dat %>%
   select(-c(starts_with("mcse"))) %>%
   spread(test, rej_rate) %>%
   mutate(power_diff = CWB - HTZ,
-         power_ratio = CWB / HTZ) %>%
+         power_ratio = HTZ/CWB) %>%
   group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
   summarize_at(vars(power_ratio), mean)
 
@@ -253,11 +253,11 @@ create_power_rat_graph <- function(dat, alpha_level){
     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
     ggplot(aes(x = m, y = power_ratio, fill = m)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dashed") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
     scale_fill_brewer(palette = "Dark2") +
     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    labs(x = "Number of Studies", y = "Power Ratio: HTZ/ CWB") + 
     theme_bw() +
     theme(legend.position = "none",
           plot.caption=element_text(hjust = 0, size = 10))
@@ -267,6 +267,13 @@ create_power_rat_graph <- function(dat, alpha_level){
 
 
 create_power_rat_graph(power_ratio, alpha_level = ".05")
+ggsave("sim_results/graphs/power_05.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_rat_graph(power_ratio, alpha_level = ".01")
+ggsave("sim_results/graphs/power_01.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_rat_graph(power_ratio, alpha_level = ".10")
+ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 
@@ -339,24 +346,24 @@ create_power_tau_graph <- function(dat, alpha_level){
     mutate(tau = as.factor(tau)) %>%
     filter(alpha == alpha_level) %>%
     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
-    ggplot(aes(x = m, y = power_diff, fill = tau)) + 
+    ggplot(aes(x = m, y = power_ratio, fill = tau)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dashed") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
     scale_fill_manual(values = c("plum3", "plum4")) +
     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    labs(x = "Number of Studies", y = "Power Ratio: HTZ/CWB", fill = expression(tau)) + 
     theme_bw() +
     theme(legend.position = "bottom")
   
   
 }
 
-create_power_tau_graph(dat = power, alpha_level = ".05")
+create_power_tau_graph(dat = power_ratio, alpha_level = ".05")
 ggsave("sim_results/graphs/tau_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_power_tau_graph(dat = power, alpha_level = ".01")
-create_power_tau_graph(dat = power, alpha_level = ".10")
+create_power_tau_graph(dat = power_ratio, alpha_level = ".01")
+create_power_tau_graph(dat = power_ratio, alpha_level = ".10")
 
 
 create_power_rho_graph <- function(dat, alpha_level){
@@ -366,20 +373,20 @@ create_power_rho_graph <- function(dat, alpha_level){
     mutate(rho = as.factor(rho)) %>%
     filter(alpha == alpha_level) %>%
     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
-    ggplot(aes(x = m, y = power_diff, fill = rho)) + 
+    ggplot(aes(x = m, y = power_ratio, fill = rho)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dashed") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
     scale_fill_manual(values = c("firebrick3", "firebrick4")) +
     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-    labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
+    labs(x = "Number of Studies", y = "Power Ratio: HTZ/CWB", fill = expression(rho)) + 
     theme_bw() +
     theme(legend.position = "bottom")
   
   
 }
 
-create_power_rho_graph(dat = power, alpha_level = ".05")
+create_power_rho_graph(dat = power_ratio, alpha_level = ".05")
 ggsave("sim_results/graphs/rho_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
 create_power_rho_graph(dat = power, alpha_level = ".01")

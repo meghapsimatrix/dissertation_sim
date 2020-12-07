@@ -158,7 +158,7 @@ mult_mat <- function(x, y) {
 }
 
 
-calculate_F <- function(beta, vcov, constraints, test, p = 5){
+calculate_F <- function(beta, vcov, constraints, test, p){
   
   C_mat <- diag(1L, nrow = p)[constraints,,drop = FALSE]    
   
@@ -179,6 +179,7 @@ cwb <- function(null_model,
                 indices_test, 
                 R, 
                 full_form, 
+                cat_num,
                 dat) {
   
   
@@ -237,12 +238,14 @@ cwb <- function(null_model,
     res <- calculate_F(beta = full_mod_cwb$coefficients, 
                        vcov = cov_mat_cwb, 
                        constraints = indices_test, 
-                       test = "CWB")
+                       test = "CWB",
+                       p = cat_num)
     
     res_adj <- calculate_F(beta = full_mod_cwb_adj$coefficients, 
                            vcov = cov_mat_cwb_adj, 
                            constraints = indices_test, 
-                           test = "CWB Adjusted")
+                           test = "CWB Adjusted",
+                           p = cat_num)
     
     bind_rows(res, res_adj)
     
@@ -254,7 +257,8 @@ cwb <- function(null_model,
   org_F <- calculate_F(beta = full_mod_org$coefficients, 
                        vcov = cov_mat_org, 
                        constraints = indices_test, 
-                       test = "Naive") %>%
+                       test = "Naive",
+                       p = cat_num) %>%
     pull(Fstat)
   
   
