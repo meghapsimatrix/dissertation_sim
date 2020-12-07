@@ -121,7 +121,7 @@ run_sim <- function(iterations,
 
 # include design matrix, exclude to_test
 
-set.seed(20201130) # change this seed value!
+set.seed(20201207) # change this seed value!
 
 # now express the simulation parameters as vectors/lists
 
@@ -193,3 +193,4 @@ results_file <- paste0("sim_test2_", paste(which_batches, collapse = "_"), ".RDa
 
 # save
 save(quick_params, results, session_info, run_date, file = results_file)
+
