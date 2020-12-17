@@ -43,7 +43,7 @@ generate_rmeta <- function(m,
                            rho, 
                            cov_type,
                            cat_num,
-                           beta_type = "A",
+                           beta_1,
                            k_mean = 4,
                            N_mean = 30,
                            nu = 50,
@@ -53,15 +53,7 @@ generate_rmeta <- function(m,
   
   # beta --------------------------------------------------------------------
   
-  # JAMES PLEASE CHECK
-
-  if (beta_type == "A") {
-    beta <- c(.3, 0, rep(0, cat_num - 2))
-  } else if(beta_type == "B5"){
-    beta <- c(.3, .5, rep(0, cat_num - 2))
-  }
-
-  
+  beta <- c(.3, beta_1, rep(0, cat_num - 2))
   beta <- matrix(beta, nrow = cat_num)
   
   
@@ -77,8 +69,6 @@ generate_rmeta <- function(m,
   
   
   # Design matrix -----------------------------------------------------------
-
-  # JAMES PLEASE CHECK
   
   cat <- LETTERS[1:cat_num]
   min_times <- 2

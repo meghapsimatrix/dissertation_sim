@@ -17,7 +17,7 @@ load("../data/big_meta.Rdata")
 
 
 meta_data <- big_meta
-cat_num <- 5
+cat_num <- 3
 full_form <- paste(names(meta_data)[str_detect(names(meta_data), "X1_")], collapse = " + ")
 indices_test <- 2:cat_num
 
@@ -42,7 +42,7 @@ cluster <- meta_data$study
 
 full_model <- robu_handmade(X = X, y = y, v = v, cluster = cluster)
 
-full_model
+full_model$coefficients
 
 # get cov matrices --------------------------------------------------------
 cov_mat_cr1 <- vcovCR(full_model, type = "CR1", cluster = cluster)

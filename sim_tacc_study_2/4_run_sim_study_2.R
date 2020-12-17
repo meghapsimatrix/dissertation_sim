@@ -27,7 +27,7 @@ run_sim <- function(iterations,
                     rho, 
                     cov_type,
                     cat_num,
-                    beta_type,
+                    beta_1,
                     batch,
                     R,
                     F_test_type = c("EDT","HTZ"),
@@ -55,7 +55,7 @@ run_sim <- function(iterations,
                                   rho = rho,
                                   cov_type = cov_type,
                                   cat_num = cat_num,
-                                  beta_type = beta_type)
+                                  beta_1 = beta_1)
       
 
       # Equation ----------------------------------------------------------------
@@ -123,7 +123,7 @@ run_sim <- function(iterations,
 
 # include design matrix, exclude to_test
 
-set.seed(20201130) # change this seed value!
+set.seed(20201212) # change this seed value!
 
 # now express the simulation parameters as vectors/lists
 
@@ -133,7 +133,7 @@ design_factors <- list(
   rho = c(0.5, 0.8),
   cov_type = c("between", "within"),
   cat_num = 3:5,
-  beta_type = c("A", "B5"),
+  beta_1 = c(0, .1, .3, .5),
   R = 399,
   batch = 1:48
 )
@@ -150,12 +150,7 @@ params <-
 
 # Just checking!! ---------------------------------------------------------
 
-# 1028.848 on mac not parallel
-# 195.73 on windows 4 cores parallel
-
-quick_params <- params %>% 
-  filter(batch == 1) %>%
-  mutate(iterations = 2)
+quick_params <- params 
 
 rm(design_factors, params)
 source_obj <- ls()
@@ -190,7 +185,6 @@ run_date <- date()
 
 # batch names 
 which_batches <- unique(quick_params$batch)
-results_file <- paste0("sim_test2_", paste(which_batches, collapse = "_"), ".RData")
 
 # save
-save(quick_params, results, session_info, run_date, file = results_file)
+save(quick_params, results, session_info, run_date, which_batches, file = "sim_test_study_2.RData")

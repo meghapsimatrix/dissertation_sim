@@ -21,11 +21,10 @@ tau <- 0.1
 rho <- 0.8
 cov_type <- "between"
 cat_num <- 3
-beta_type <- "A"
-beta_type = "A"
-k_mean = 4
-N_mean = 30
-nu = 50
+beta_1 <- 0
+k_mean <- 4
+N_mean <- 30
+nu <- 50
 
 
 meta_data <- 
@@ -34,7 +33,7 @@ meta_data <-
                  rho = 0.8, 
                  cov_type = "between",
                  cat_num = 3,
-                 beta_type = "A")
+                 beta_1 = 0)
 
 meta_data_w <- 
   generate_rmeta(m = 10, 
@@ -42,7 +41,7 @@ meta_data_w <-
                  rho = 0.8, 
                  cat_num = 5,
                  cov_type = "within",
-                 beta_type = "A")
+                 beta_1 = .5)
 
 
 
@@ -58,7 +57,7 @@ meta_data <-
                  rho = 0.8, 
                  cov_type = "between",
                  cat_num = 5,
-                 beta_type = "A")
+                 beta_1 = 0)
 
 save(meta_data, file = "../data/meta_data_practice_2.Rdata")
 
@@ -75,7 +74,7 @@ meta_data_params <-
                  rho = 0.8, 
                  cov_type = "between",
                  cat_num = 5, 
-                 beta_type = "B5", 
+                 beta_1 = .5, 
                  return_study_params = TRUE)
 
 check <- meta_data %>%
@@ -93,8 +92,8 @@ big_meta <-
                  tau = 0.1, 
                  rho = 0.8, 
                  cov_type = "between",
-                 cat_num = 4,
-                 beta_type = "B5",
+                 cat_num = 3,
+                 beta_1 = .5,
                  return_study_params = FALSE)
 
 save(big_meta, file = "../data/big_meta.Rdata")
@@ -117,7 +116,7 @@ study_features <-
                  rho = 0.6, 
                  cov_type = "between",
                  cat_num = 5,
-                 beta_type = "A",
+                 beta_1 = 0,
                  return_study_params = TRUE)
 
 # check means of k, N, Psi
