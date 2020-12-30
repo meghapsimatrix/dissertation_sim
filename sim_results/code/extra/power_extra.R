@@ -1,12 +1,12 @@
 # Power X1 5 --------------------------------------------------------------
 
-create_power_graph <- function(dat, beta, cov){
+create_power_graph <- function(dat, beta, cov, alpha){
   
   dat %>%
-    filter(beta_type == beta) %>%
+    filter(beta_type == beta, alpha == alpha) %>%
+    filter(str_detect(cov_test, cov)) %>%
     filter(test != "Naive-F") %>%
-    mutate(m = paste("m =", m),
-           q = paste("q =", contrasts))  %>%
+    mutate(m = paste("m =", m))  %>%
     ggplot(aes(x = test, y = rej_rate, fill = test)) + 
     geom_hline(yintercept = .8, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
@@ -24,8 +24,8 @@ create_power_graph <- function(dat, beta, cov){
 # The first binary covariate, X1, is a study level covariate with large imbalance, 
 # equaling 1 in 15% of the studies.
 
-create_power_graph(dat = small_res_05, beta = "B5", cov = "X1")
-create_power_graph(dat = small_res_01, beta = "B5", cov = "X1")
+create_power_graph(dat = power_dat, beta = "B5", cov = "X1", alpha = .05)
+create_power_graph(dat = power_dat, beta = "B5", cov = "X1")
 
 
 # Power X1 1 --------------------------------------------------------------

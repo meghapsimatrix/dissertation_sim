@@ -86,6 +86,16 @@ type1_dat %>%
   summarize(min = min(mcse),
             max = max(mcse))
 
+mcse_type_1 <- type1_dat %>%
+  ungroup() %>%
+  filter(test != "Naive-F") %>%
+  group_by(test, alpha) %>%
+  summarize(max = max(mcse)) %>%
+  spread(alpha, max) %>%
+  mutate_if(is.numeric, round, 3)
+
+write_csv(mcse_type_1, "sim_results/mcse_type_1_study2.csv")
+
 power_dat <- results %>%
   filter(beta_1 != 0) %>%
   mutate(q = paste("q =", cat_num),
@@ -107,6 +117,13 @@ power_dat %>%
   summarize(min = min(mcse),
             max = max(mcse))
 
+power_mcse <- power_dat %>%
+  ungroup() %>%
+  filter(test != "Naive-F") %>%
+  group_by(test, alpha) %>%
+  summarize(max = max(mcse)) %>%
+  spread(alpha, max) %>%
+  mutate_if(is.numeric, round, 3)
 
 # Alpha .05 
 

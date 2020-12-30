@@ -105,12 +105,16 @@ type1_dat <- results %>%
     mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
 
 
-type1_dat %>%
+mcse_type_1 <- type1_dat %>%
   ungroup() %>%
   filter(test != "Naive-F") %>%
-  group_by(alpha) %>%
-  summarize(min = min(mcse),
-            max = max(mcse))
+  group_by(test, alpha) %>%
+  summarize(max = max(mcse)) %>%
+  spread(alpha, max) %>%
+  mutate_if(is.numeric, round, 3)
+
+write_csv(mcse_type_1, "sim_results/mcse_type_1.csv")
+
 
 power_dat <- results %>%
   filter(beta_type != "A") %>%
@@ -127,11 +131,13 @@ power_dat <- results %>%
             .groups = "drop") %>%
   mutate(mcse = sqrt((rej_rate * (1 - rej_rate))/ K_all))
   
-power_dat %>%
+power_mcse <- power_dat %>%
   ungroup() %>%
-  group_by(test, beta_type, alpha) %>%
-  summarize(min = min(mcse),
-            max = max(mcse))
+  filter(test != "Naive-F") %>%
+  group_by(test, alpha) %>%
+  summarize(max = max(mcse)) %>%
+  spread(alpha, max) %>%
+  mutate_if(is.numeric, round, 3)
 
 
 # Alpha .05 
@@ -243,6 +249,10 @@ power_ratio <- power_dat %>%
          power_ratio = HTZ/CWB) %>%
   group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
   summarize_at(vars(power_ratio), mean)
+
+power_ratio %>%
+  filter(power_ratio > 1, m == 10) %>%
+  View()
 
 
 create_power_rat_graph <- function(dat, alpha_level){
