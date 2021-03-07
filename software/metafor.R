@@ -1,47 +1,58 @@
 
 
 
-if(class(full_model) == "robu"){
+  if(class(full_model) == "robu"){
+    
+    full_dat <- full_model$data.full %>%
+      dplyr::mutate(id = rownames(.))
+    
+    x_dat <- full_model$X.full %>%
+      dplyr::mutate(id = rownames(.)) %>%
+      dplyr::select(-1)
+    
+    dat <- full_dat %>%
+      dplyr::left_join(x_dat, by = "id")
+    
+    full_formula <- full_model$reg_table[, 1]
+    full_formula <- stringr::str_replace(null_formula, "X.Intercept.", "1")
+    
+  }
   
-  full_dat <- full_model$data.full %>%
-    dplyr::mutate(id = rownames(.))
-  
-  x_dat <- full_model$X.full %>%
-    dplyr::mutate(id = rownames(.)) %>%
-    dplyr::select(-1)
-  
-  dat <- full_dat %>%
-    dplyr::left_join(x_dat, by = "id")
-  
-  full_formula <- full_model$reg_table[, 1]
-  full_formula <- stringr::str_replace(null_formula, "X.Intercept.", "1")
-  
-}
-
-if("rma" %in% class(full_model) {
-  
-  y_dat <- dplyr::bind_cols(full_model$yi, full_model$vi, .name_repair = ~ vctrs::vec_as_names(..., repair = "unique", quiet = TRUE)) %>%
-    dplyr::rename(effect.size = 1, var.effect.size = 2)
-  
-  x_dat <- as_tibble(full_model$X) %>%
-    dplyr::select(-1)
-  
-  dat <- dplyr::bind_cols(y_dat, x_dat)
-  
-  full_formula <- rownames(mod_metafor$beta)
-  full_formula <- stringr::str_replace(null_formula, "intrcpt.", "1")
-}
-  
+  if("rma" %in% class(full_model)) {
+    
+    y_dat <- dplyr::bind_cols(full_model$yi, full_model$vi, .name_repair = ~ vctrs::vec_as_names(..., repair = "unique", quiet = TRUE)) %>%
+      dplyr::rename(effect.size = 1, var.effect.size = 2)
+    
+    x_dat <- as_tibble(full_model$X) %>%
+      dplyr::select(-1)
+    
+    dat <- dplyr::bind_cols(y_dat, x_dat)
+    
+    full_formula <- rownames(mod_metafor$beta)
+    full_formula <- stringr::str_replace(null_formula, "intrcpt.", "1")
+  }
+    
   
   null_formula <- paste(full_formula[- indices], collapse = " + ")
   full_formula <- paste(full_formula, collapse = " + ")
 
+  if(class(full_model) == "robu"){
   
   null_model <- robumeta::robu(stats::as.formula(paste("effect.size ~ ", null_formula)),
                                studynum = study,
                                var.eff.size = var.eff.size,
                                small = FALSE,
                                dat = dat)
+  
+  }
+  
+  if("rma" %in% class(full_model)) {
+    
+    null_model <- metafor::rma.mv(yi = d,
+                                  V = V, 
+                                  mods = ~ study_type, 
+                                  data = SATcoaching)
+    
   
   # residuals and transformed residuals -------------------------------------
   

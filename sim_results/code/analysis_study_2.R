@@ -1,4 +1,6 @@
 library(tidyverse)
+library(patchwork)
+
 
 load("sim_results/results_study2/sim_test_study_2.RData")
 
@@ -11,13 +13,23 @@ K_all <- results %>%
 K_all
 
 results <- results %>%
-  filter(test != "EDT")
+  filter(test != "EDT") %>%
+  mutate(cat_num = cat_num - 1)
+
+
+
+mcse_01 <- sqrt((.01 * (1 - .01))/ K_all)
+mcse_05 <- sqrt((.05 * (1 - .05))/ K_all)
+mcse_10 <- sqrt((.10 * (1 - .10))/ K_all)
+
 
 
 data_int <- tibble(alpha = c(".01", 
                              ".05", 
                              ".10"),
-                   int = c(.01, .05, .10))
+                   int = c(.01, .05, .10),
+                   mcse = c(mcse_01, mcse_05, mcse_10)) %>%
+  mutate(error = int + 1.96 * mcse)
 
 naive_dat <- results %>%
   select(test, beta_1, rho, tau, m, cov_type, cat_num, starts_with("rej_rate")) %>%
@@ -40,17 +52,30 @@ naive_check <- naive_dat %>%
             max = max(rej_rate),
             median = median(rej_rate))
 
+create_naive_graph <- function(cov, title){
 
-naive_dat %>%
-  ggplot(aes(x = m, y = rej_rate, fill = cov_type)) +
-  geom_hline(data = data_int, aes(yintercept = int), linetype = "dashed") + 
-  geom_boxplot(alpha = .5) + 
-  scale_y_continuous(breaks = seq(0, 1, .1)) + 
-  scale_fill_manual(values = c("aquamarine4", "violetred4")) +
-  facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
-  labs(x = "Number of Studies", y = "Type 1 Error Rate", fill = "Covariate Type") + 
-  theme_bw() +
-  theme(legend.position = "bottom")
+  naive_dat %>%
+    filter(cov_type == cov) %>%
+    ggplot(aes(x = m, y = rej_rate, fill = m)) +
+    geom_hline(data = data_int, aes(yintercept = int), linetype = "solid") + 
+    geom_hline(data = data_int, aes(yintercept = error), linetype = "dashed") + 
+    geom_boxplot(alpha = .5) + 
+    #scale_y_continuous(breaks = seq(0, 1, .1)) + 
+    scale_fill_brewer(palette = "Dark2") +
+    facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
+    labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
+    ggtitle(title) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+}  
+
+b <- create_naive_graph(cov = "between", title = "Study-level covariate type")
+w <- create_naive_graph(cov = "within", title = "Effect size-level covariate type")
+
+
+b + w
+
 
 ggsave("sim_results/graphs/study_2/naivef_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
@@ -130,42 +155,148 @@ power_mcse <- power_dat %>%
 # Type 1 error ------------------------------------------------------------
 
 
-create_type1_graph <- function(dat, intercept, br){
+create_type1_graph <- function(dat, intercept, error, br, cov, title){
   
   dat <- dat %>%
-    filter(test != "Naive-F")
+    filter(test != "Naive-F") %>%
+    filter(cov_type == cov)
   
   dat %>%
-    ggplot(aes(x = test, y = rej_rate, fill = cov_type)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_manual(values = c("aquamarine4", "violetred4")) +
+    #scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
+    scale_fill_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", fill = "Covariate Type") + 
+    labs(x = "Method", y = "Type 1 Error Rate") + 
+    ggtitle(title) +
     theme_bw() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
 }
 
 
 
-create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
+b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), 
+                   intercept = .05, 
+                   error = data_int %>% filter(int == .05) %>% pull(error), 
+                   cov = "between",
+                   title = "Study-level covariate type")
+
+w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), 
+                        intercept = .05, 
+                        error = data_int %>% filter(int == .05) %>% pull(error), 
+                        cov = "within",
+                        title = "Effect size-level covariate type")
+
+b + w
 
 ggsave("sim_results/graphs/study_2/type1_05_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 # Type 1 error ------------------------------------------------------------
 # 01
 
-create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
+b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
+                   intercept = .01,
+                   error = data_int %>% filter(int == .01) %>% pull(error), 
+                   cov = "between",
+                   title = "Study-level covariate type")
+
+w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
+                        intercept = .01,
+                        error = data_int %>% filter(int == .01) %>% pull(error), 
+                        cov = "within",
+                        title = "Effect size-level covariate type")
+
+b + w
 
 ggsave("sim_results/graphs/study_2/type1_01_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 # Type 1 error ------------------------------------------------------------
 # 10
 
-create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), 
+                   intercept = .10,
+                   error = data_int %>% filter(int == .10) %>% pull(error),
+                   cov = "between",
+                   title = "Study-level covariate type")
+
+w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), 
+                        intercept = .10,
+                        error = data_int %>% filter(int == .10) %>% pull(error),
+                        cov = "within",
+                        title = "Effect size-level covariate type")
+
+b + w
 
 ggsave("sim_results/graphs/study_2/type1_10_2.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# Power -------------------------------------------------------------------
+
+create_power_graph <- function(alpha_level, dat = power_dat, cov, title){
+  
+  dat %>%
+    filter(cov_type == cov) %>%
+    filter(alpha == alpha_level) %>%
+    filter(test != "Naive-F") %>%
+    mutate(beta = beta_1) %>%
+    ggplot(aes(x = m, y = rej_rate, fill = test)) + 
+    geom_boxplot(alpha = .5) + 
+    scale_y_continuous(breaks = seq(0, 1, .2)) +
+    scale_fill_brewer(palette = "Set1") +
+    facet_grid(q ~ beta, scales = "free_y",  labeller = label_bquote(cols = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Power", fill = "") + 
+    ggtitle(title) +
+    theme_bw() +
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+}
+
+
+
+b <- create_power_graph(alpha_level = ".05", 
+                   cov = "between",
+                   title = "Study-level covariate type")
+
+w <- create_power_graph(alpha_level = ".05", 
+                        cov = "within",
+                        title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs/study_2/power_05_abs_2.png", device = "png", dpi = 500, height = 7, width = 12)
+
+b <- create_power_graph(alpha_level = ".01", 
+                        cov = "between",
+                        title = "Study-level covariate type")
+
+w <- create_power_graph(alpha_level = ".01", 
+                        cov = "within",
+                        title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs/study_2/power_01_abs_2.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+b <- create_power_graph(alpha_level = ".10", 
+                        cov = "between",
+                        title = "Study-level covariate type")
+
+w <- create_power_graph(alpha_level = ".10", 
+                        cov = "within",
+                        title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs/study_2/power_10_abs_2.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+
 
 # Power ratio -------------------------------------------------------------
 
@@ -181,32 +312,63 @@ power_ratio <- power_dat %>%
   summarize_at(vars(power_ratio), mean)
 
 
-create_power_rat_graph <- function(dat, alpha_level){
+create_power_rat_graph <- function(dat, alpha_level, cov, title){
   
   
   dat %>%
     filter(alpha == alpha_level) %>%
+    filter(cov_type == cov) %>%
     mutate(beta = beta_1) %>%
-    ggplot(aes(x = m, y = power_ratio, fill = cov_type)) + 
+    ggplot(aes(x = m, y = power_ratio, fill = m)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 1, linetype = "dashed") +
-    scale_fill_manual(values = c("aquamarine4", "violetred4")) +
-    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-    labs(x = "Number of Studies", y = "Power Ratio: HTZ/ CWB", fill = "Covariate Type") + 
+    geom_hline(yintercept = 1, linetype = "solid") +
+    #scale_y_continuous(breaks = seq(0, 1, .05)) + 
+    ylim(c(0, NA)) +
+    scale_fill_brewer(palette = "Dark2") +
+    facet_grid(q ~ beta, scales = "free_y",  
+               labeller = label_bquote(cols = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Power Ratio: HTZ/ CWB") + 
+    ggtitle(title) +
     theme_bw() +
-    theme(legend.position = "bottom")
-  
-  
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+
 }
 
+b <- create_power_rat_graph(power_ratio, alpha_level = ".05", 
+                            cov = "between",
+                            title = "Study-level covariate type")
 
-create_power_rat_graph(power_ratio, alpha_level = ".05")
+w <- create_power_rat_graph(power_ratio, alpha_level = ".05", 
+                       cov = "within",
+                       title = "Effect size-level covariate type")
+
+b + w
+
 ggsave("sim_results/graphs/study_2/power_05_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_power_rat_graph(power_ratio, alpha_level = ".01")
+b <- create_power_rat_graph(power_ratio, alpha_level = ".01",
+                       cov = "between",
+                       title = "Study-level covariate type")
+
+w <- create_power_rat_graph(power_ratio, alpha_level = ".01",
+                            cov = "within",
+                            title = "Effect size-level covariate type")
+
+b + w
+
 ggsave("sim_results/graphs/study_2/power_01_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_power_rat_graph(power_ratio, alpha_level = ".10")
+b <- create_power_rat_graph(power_ratio, alpha_level = ".10",
+                       cov = "between",
+                       title = "Study-level covariate type")
+
+w <- create_power_rat_graph(power_ratio, alpha_level = ".10",
+                            cov = "within",
+                            title = "Effect size-level covariate type")
+
+b + w
+
 ggsave("sim_results/graphs/study_2/power_10_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
@@ -216,7 +378,7 @@ ggsave("sim_results/graphs/study_2/power_10_2.png", device = "png", dpi = 500, h
 
 # Type 1 error ------------------------------------------------------------
 
-create_type1_tau_graph <- function(dat, intercept, br, cov){
+create_type1_tau_graph <- function(dat, intercept, error, br, cov, title){
   
   dat <- dat %>%
     filter(test != "Naive-F")
@@ -225,37 +387,42 @@ create_type1_tau_graph <- function(dat, intercept, br, cov){
     filter(cov_type == cov) %>%
     mutate(tau = as.factor(tau)) %>%
     ggplot(aes(x = test, y = rej_rate, fill = tau)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_manual(values = c("plum3", "plum4")) +
+    #scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_fill_manual(values = c("plum2", "plum4")) +
+    scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
-    ggtitle(paste0(str_to_title(cov), "-study covariate type")) + 
+    ggtitle(title) + 
     theme_bw() +
     theme(legend.position = "bottom")
 }
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
+b <- create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
                        intercept = .05, 
-                       br = .02, 
-                       cov = "between")
+                       error = data_int %>% filter(int == .05) %>% pull(error),
+                       cov = "between",
+                       title = "Study-level covariate type")
 
-ggsave("sim_results/graphs/study_2/tau_052_between.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
+w <- create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
                        intercept = .05, 
-                       br = .02, 
-                       cov = "within")
+                       error = data_int %>% filter(int == .05) %>% pull(error),
+                       cov = "within",
+                       title = "Effect size-level covariate type")
 
-ggsave("sim_results/graphs/study_2/tau_052_within.png", device = "png", dpi = 500, height = 7, width = 12)
+b + w  + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+ggsave("sim_results/graphs/study_2/tau_052.png", device = "png", dpi = 500, height = 7, width = 12)
+
+#create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
+#create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
 
 
-create_type1_rho_graph <- function(dat, intercept, br, cov){
+create_type1_rho_graph <- function(dat, intercept, error, br, cov, title){
   
   dat <- dat %>%
     filter(test != "Naive-F")
@@ -264,41 +431,49 @@ create_type1_rho_graph <- function(dat, intercept, br, cov){
     filter(cov_type == cov) %>%
     mutate(rho = as.factor(rho)) %>%
     ggplot(aes(x = test, y = rej_rate, fill = rho)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5, position = "dodge") + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_manual(values = c("firebrick3", "firebrick4")) +
+    #scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
+    scale_fill_manual(values = c("firebrick2", "firebrick4")) +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate", fill = expression(rho)) + 
-    ggtitle(paste0(str_to_title(cov), "-study covariate type")) + 
+    ggtitle(title) + 
     theme_bw() +
     theme(legend.position = "bottom")
 }
 
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
+b <- create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        intercept = .05, 
+                       error = data_int %>% filter(int == .05) %>% pull(error),
                        br = .02, 
-                       cov = "between")
+                       cov = "between",
+                       title = "Study-level covariate type")
 
-ggsave("sim_results/graphs/study_2/rho_052_between.png", device = "png", dpi = 500, height = 7, width = 12)
+#ggsave("sim_results/graphs/study_2/rho_052_between.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
+w <- create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        intercept = .05, 
+                       error = data_int %>% filter(int == .05) %>% pull(error),
                        br = .02, 
-                       cov = "within")
+                       cov = "within",
+                       title = "Effect size-level covariate type")
 
-ggsave("sim_results/graphs/study_2/rho_052_within.png", device = "png", dpi = 500, height = 7, width = 12)
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs/study_2/rho_052.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+#create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
+# create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
 
 
 # Power sensitivity -------------------------------------------------------
 
 
 
-create_power_tau_graph <- function(dat, alpha_level, cov){
+create_power_tau_graph <- function(dat, alpha_level, cov, title){
   
   
   dat %>%
@@ -308,29 +483,38 @@ create_power_tau_graph <- function(dat, alpha_level, cov){
     mutate(beta = beta_1) %>%
     ggplot(aes(x = m, y = power_ratio, fill = tau)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 1, linetype = "dashed") +
-    scale_fill_manual(values = c("plum3", "plum4")) +
-    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    geom_hline(yintercept = 1, linetype = "solid") +
+    scale_fill_manual(values = c("plum2", "plum4")) +
+    ylim(c(0, NA)) +
+    facet_grid(q ~ beta, scales = "free_y",  labeller = label_bquote(cols = beta == .(beta))) + 
     labs(x = "Number of Studies", y = "Power Ratio: HTZ/CWB", fill = expression(tau)) + 
-    ggtitle(paste0(str_to_title(cov), "-study covariate type")) + 
+    ggtitle(title) + 
     theme_bw() +
     theme(legend.position = "bottom")
   
   
 }
 
-create_power_tau_graph(dat = power_ratio, alpha_level = ".05", cov = "between")
-ggsave("sim_results/graphs/study_2/tau_power_052_between.png", device = "png", dpi = 500, height = 7, width = 12)
+b <- create_power_tau_graph(dat = power_ratio, 
+                            alpha_level = ".05", 
+                            cov = "between",
+                            title = "Study-level covariate type")
 
-create_power_tau_graph(dat = power_ratio, alpha_level = ".05", cov = "within")
-ggsave("sim_results/graphs/study_2/tau_power_052_within.png", device = "png", dpi = 500, height = 7, width = 12)
+w <- create_power_tau_graph(dat = power_ratio, 
+                            alpha_level = ".05", 
+                            cov = "within",
+                            title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs/study_2/tau_power_052.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-create_power_tau_graph(dat = power_ratio, alpha_level = ".01")
-create_power_tau_graph(dat = power_ratio, alpha_level = ".10")
+#create_power_tau_graph(dat = power_ratio, alpha_level = ".01")
+#create_power_tau_graph(dat = power_ratio, alpha_level = ".10")
 
 
-create_power_rho_graph <- function(dat, alpha_level, cov){
+create_power_rho_graph <- function(dat, alpha_level, cov, title){
   
   
   dat %>%
@@ -340,25 +524,77 @@ create_power_rho_graph <- function(dat, alpha_level, cov){
     mutate(beta = beta_1) %>%
     ggplot(aes(x = m, y = power_ratio, fill = rho)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "solid") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-    scale_fill_manual(values = c("firebrick3", "firebrick4")) +
-    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    scale_fill_manual(values = c("firebrick2", "firebrick4")) +
+    ylim(c(0, NA)) +
+    facet_grid(q ~ beta, scales = "free_y",  labeller = label_bquote(cols = beta == .(beta))) + 
     labs(x = "Number of Studies", y = "Power Ratio: HTZ/CWB", fill = expression(rho)) + 
-    ggtitle(paste0(str_to_title(cov), "-study covariate type")) + 
+    ggtitle(title) + 
     theme_bw() +
     theme(legend.position = "bottom")
   
   
 }
 
-create_power_rho_graph(dat = power_ratio, alpha_level = ".05", cov = "between")
-ggsave("sim_results/graphs/study_2/rho_power_052_between.png", device = "png", dpi = 500, height = 7, width = 12)
+b <- create_power_rho_graph(dat = power_ratio, 
+                            alpha_level = ".05", 
+                            cov = "between",
+                            title = "Study-level covariate type")
 
-create_power_rho_graph(dat = power_ratio, alpha_level = ".05", cov = "within")
-ggsave("sim_results/graphs/study_2/rho_power_052_within.png", device = "png", dpi = 500, height = 7, width = 12)
+w <- create_power_rho_graph(dat = power_ratio, 
+                            alpha_level = ".05", 
+                            cov = "within",
+                            title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs/study_2/rho_power_052.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
-create_power_rho_graph(dat = power, alpha_level = ".01")
-create_power_rho_graph(dat = power, alpha_level = ".10")
+create_power_covs <- function(alpha_level, dat = power_dat, q_level){
+  
+  dat <- dat %>%
+    mutate(cov_test = str_replace_all(cov_test, "\\+", "\\,"))  %>%
+    filter(alpha == alpha_level) %>%
+    filter(test != "Naive-F") %>%
+    filter(q == q_level) 
+  
+  if(q_level == "q = 1"){
+    
+    dat <- dat %>%
+      mutate(cov_name = case_when(cov_test == "X1" ~ "Study-level, binary, large imbalance",
+                                  cov_test == "X2" ~ "Effect size-level, binary, large imbalance",
+                                  cov_test == "X3" ~ "Study-level, continuous, normal",
+                                  cov_test == "X4" ~ "Effect size-level, continuous, normal",
+                                  cov_test == "X5" ~ "Effect size-level, continuous, skewed"))
+    
+  }
+  
+  
+  p <- dat %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    #filter(beta == beta_level) %>%
+    ggplot(aes(x = m, y = rej_rate, fill = test)) + 
+    geom_boxplot(alpha = .5) + 
+    #scale_y_continuous(breaks = seq(0, 1, .2)) +
+    scale_fill_brewer(palette = "Set1") 
+  
+  if(q_level == "q = 1"){
+    p <- p + facet_grid(beta ~ cov_test + cov_name, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
+  } else {
+    p <- p + facet_grid(beta ~ cov_test, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
+    
+  }
+  
+  p +
+    labs(x = "Number of Studies", y = "Power", fill = "") +
+    #ggtitle(bquote(beta == .(beta_level))) + 
+    theme_bw() +
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+}
+#create_power_rho_graph(dat = power, alpha_level = ".01")
+#create_power_rho_graph(dat = power, alpha_level = ".10")
 

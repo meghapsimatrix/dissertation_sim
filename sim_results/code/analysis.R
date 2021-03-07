@@ -24,6 +24,7 @@ results <- map_dfr(files, load_res)
 results %>%
   filter(K < 50)
 
+
 table(results$batch)
 
 K_all <- results %>%
@@ -45,10 +46,18 @@ glimpse(results)
 
 # Naive -------------------------------------------------------------------
 
+mcse_01 <- sqrt((.01 * (1 - .01))/ K_all)
+mcse_05 <- sqrt((.05 * (1 - .05))/ K_all)
+mcse_10 <- sqrt((.10 * (1 - .10))/ K_all)
+
+
+
 data_int <- tibble(alpha = c(".01", 
                              ".05", 
                              ".10"),
-                   int = c(.01, .05, .10))
+                   int = c(.01, .05, .10),
+                   mcse = c(mcse_01, mcse_05, mcse_10)) %>%
+  mutate(error = int + 1.96 * mcse)
 
 naive_dat <- results %>%
   select(test, beta_type, cov_test, rho, tau, m, contrasts, starts_with("rej_rate")) %>%
@@ -68,7 +77,8 @@ summary(naive_dat$mcse)
 
 naive_dat %>%
   ggplot(aes(x = m, y = rej_rate, fill = m)) +
-    geom_hline(data = data_int, aes(yintercept = int), linetype = "dashed") + 
+    geom_hline(data = data_int, aes(yintercept = int), linetype = "solid") + 
+    geom_hline(data = data_int, aes(yintercept = error), linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
     scale_y_continuous(breaks = seq(0, 1, .1)) + 
     scale_fill_brewer(palette = "Dark2") +
@@ -139,22 +149,32 @@ power_mcse <- power_dat %>%
   spread(alpha, max) %>%
   mutate_if(is.numeric, round, 3)
 
+power_mcse <- power_dat %>%
+  ungroup() %>%
+  filter(test != "Naive-F") %>%
+  group_by(test, alpha, q) %>%
+  summarize(max = max(mcse)) %>%
+  spread(alpha, max) %>%
+  mutate_if(is.numeric, round, 3)
+
+
 
 # Alpha .05 
 
 # Type 1 error ------------------------------------------------------------
 
 
-create_type1_graph <- function(dat, intercept, br){
+create_type1_graph <- function(dat, intercept, error){
   
   dat <- dat %>%
     filter(test != "Naive-F")
   
   dat %>%
     ggplot(aes(x = test, y = rej_rate, fill = test)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
+    #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_fill_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate") + 
@@ -165,77 +185,65 @@ create_type1_graph <- function(dat, intercept, br){
 
 
 
-create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), 
+                   intercept = .05, 
+                   error = data_int %>% filter(int == .05) %>% pull(error))
 
 ggsave("sim_results/graphs/type1_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
 # Type 1 error ------------------------------------------------------------
 # 01
 
-create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
+                   intercept = .01,
+                   error = data_int %>% filter(int == .01) %>% pull(error))
 
 ggsave("sim_results/graphs/type1_01.png", device = "png", dpi = 500, height = 7, width = 12)
 
 # Type 1 error ------------------------------------------------------------
 # 10
 
-create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10,
+                   error = data_int %>% filter(int == .10) %>% pull(error))
 
 ggsave("sim_results/graphs/type1_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 
+# Power -------------------------------------------------------------------
 
-# Power Difference --------------------------------------------------------
+create_power_graph <- function(alpha_level, dat = power_dat){
+  
+  dat %>%
+    filter(alpha == alpha_level) %>%
+    filter(test != "Naive-F") %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    ggplot(aes(x = m, y = rej_rate, fill = test)) + 
+    geom_boxplot(alpha = .5) + 
+    #scale_y_continuous(breaks = seq(0, 1, .2)) +
+    scale_fill_brewer(palette = "Set1") +
+    facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
+    labs(x = "Number of Studies", y = "Power", fill = "") + 
+    theme_bw() +
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+}
 
-# power <- power_dat %>%
-#   filter(test %in% c("CWB", "HTZ")) %>%
-#   select(-c(starts_with("mcse"))) %>%
-#   spread(test, rej_rate) %>%
-#   mutate(power_diff = CWB - HTZ,
-#          power_ratio = CWB / HTZ) %>%
-#   group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
-#   summarize_at(vars(power_diff), mean)
-# 
-# 
-# # HTZ relative to CWB
-# # relative power loss
-# # graph for this
-# 
-# # represent beta in facets and separate plots for alpha
-# 
-# 
-# create_power_graph <- function(dat, alpha_level){
-# 
-#   
-#   dat %>%
-#     filter(alpha == alpha_level) %>%
-#     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
-#     ggplot(aes(x = m, y = power_diff, fill = m)) + 
-#     geom_boxplot(alpha = .5) + 
-#     geom_hline(yintercept = 0, linetype = "dashed") +
-#     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-#     scale_fill_brewer(palette = "Dark2") +
-#     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
-#     labs(x = "Number of Studies", y = "Difference in Power: CWB - HTZ") + 
-#     theme_bw() +
-#     theme(legend.position = "none",
-#           plot.caption=element_text(hjust = 0, size = 10))
-#   
-#     
-#   }
-#   
-#   
-# create_power_graph(dat = power, alpha_level = ".01")
-# ggsave("sim_results/graphs/power_01.png", device = "png", dpi = 500, height = 7, width = 12)
-# 
-# create_power_graph(dat = power, alpha_level = ".05")
-# ggsave("sim_results/graphs/power_05.png", device = "png", dpi = 500, height = 7, width = 12)
-# 
-# create_power_graph(dat = power, alpha_level = ".10")
-# ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
+glimpse(power_dat)
 
-#summary(power$power_diff)
+create_power_graph(alpha_level = ".05")
+ggsave("sim_results/graphs/power_05_abs.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_graph(alpha_level = ".01")
+ggsave("sim_results/graphs/power_01_abs.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_graph(alpha_level = ".10")
+ggsave("sim_results/graphs/power_10_abs.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+
 
 # Power ratio -------------------------------------------------------------
 
@@ -250,9 +258,6 @@ power_ratio <- power_dat %>%
   group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
   summarize_at(vars(power_ratio), mean)
 
-power_ratio %>%
-  filter(power_ratio > 1, m == 10) %>%
-  View()
 
 
 create_power_rat_graph <- function(dat, alpha_level){
@@ -263,7 +268,7 @@ create_power_rat_graph <- function(dat, alpha_level){
     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
     ggplot(aes(x = m, y = power_ratio, fill = m)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "solid") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
     scale_fill_brewer(palette = "Dark2") +
     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
@@ -287,13 +292,14 @@ ggsave("sim_results/graphs/power_10.png", device = "png", dpi = 500, height = 7,
 
 
 
+
 # Sensitivity Analyses ---------------------------------------------------
 
 # Alpha .05 
 
 # Type 1 error ------------------------------------------------------------
 
-create_type1_tau_graph <- function(dat, intercept, br){
+create_type1_tau_graph <- function(dat, intercept, error, br){
   
   dat <- dat %>%
     filter(test != "Naive-F")
@@ -301,25 +307,29 @@ create_type1_tau_graph <- function(dat, intercept, br){
   dat %>%
     mutate(tau = as.factor(tau)) %>%
     ggplot(aes(x = test, y = rej_rate, fill = tau)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_manual(values = c("plum3", "plum4")) +
+    #scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_fill_manual(values = c("plum2", "plum4")) +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
     theme_bw() +
     theme(legend.position = "bottom")
 }
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, 
+                       error = data_int %>% filter(int == .05) %>% pull(error))
 
 ggsave("sim_results/graphs/tau_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
-create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01,
+                       error = data_int %>% filter(int == .01) %>% pull(error))
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10,
+                       error = data_int %>% filter(int == .10) %>% pull(error))
 
 
-create_type1_rho_graph <- function(dat, intercept, br){
+create_type1_rho_graph <- function(dat, intercept, error){
   
   dat <- dat %>%
     filter(test != "Naive-F")
@@ -327,22 +337,26 @@ create_type1_rho_graph <- function(dat, intercept, br){
   dat %>%
     mutate(rho = as.factor(rho)) %>%
     ggplot(aes(x = test, y = rej_rate, fill = rho)) + 
-    geom_hline(yintercept = intercept, linetype = "dashed") + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5, position = "dodge") + 
-    scale_y_continuous(breaks = seq(0, .6, br)) + 
-    scale_fill_manual(values = c("firebrick3", "firebrick4")) +
+    #scale_y_continuous(breaks = seq(0, .6, br)) + 
+    scale_fill_manual(values = c("firebrick2", "firebrick4")) +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate", fill = expression(rho)) + 
     theme_bw() +
     theme(legend.position = "bottom")
 }
 
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, br = .02)
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05,
+                       error = data_int %>% filter(int == .05) %>% pull(error))
 
 ggsave("sim_results/graphs/rho_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, br = .01)
-create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10, br = .02)
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, 
+                       error = data_int %>% filter(int == .01) %>% pull(error))
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10,
+                       error = data_int %>% filter(int == .10) %>% pull(error))
 
 
 # Power sensitivity -------------------------------------------------------
@@ -358,9 +372,9 @@ create_power_tau_graph <- function(dat, alpha_level){
     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
     ggplot(aes(x = m, y = power_ratio, fill = tau)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "solid") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-    scale_fill_manual(values = c("plum3", "plum4")) +
+    scale_fill_manual(values = c("plum2", "plum4")) +
     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
     labs(x = "Number of Studies", y = "Power Ratio: HTZ/CWB", fill = expression(tau)) + 
     theme_bw() +
@@ -385,9 +399,9 @@ create_power_rho_graph <- function(dat, alpha_level){
     mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
     ggplot(aes(x = m, y = power_ratio, fill = rho)) + 
     geom_boxplot(alpha = .5) + 
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "solid") +
     #scale_y_continuous(breaks = seq(0, 1, .05)) + 
-    scale_fill_manual(values = c("firebrick3", "firebrick4")) +
+    scale_fill_manual(values = c("firebrick2", "firebrick4")) +
     facet_grid(beta ~ q, scales = "free_y",  labeller = label_bquote(rows = beta == .(beta))) + 
     labs(x = "Number of Studies", y = "Power Ratio: HTZ/CWB", fill = expression(rho)) + 
     theme_bw() +
@@ -399,6 +413,149 @@ create_power_rho_graph <- function(dat, alpha_level){
 create_power_rho_graph(dat = power_ratio, alpha_level = ".05")
 ggsave("sim_results/graphs/rho_power_05.png", device = "png", dpi = 500, height = 7, width = 12)
 
-create_power_rho_graph(dat = power, alpha_level = ".01")
-create_power_rho_graph(dat = power, alpha_level = ".10")
+
+
+# Power single coef -------------------------------------------------------
+
+
+create_power_covs <- function(alpha_level, dat = power_dat, q_level){
+  
+  dat <- dat %>%
+    mutate(cov_test = str_replace_all(cov_test, "\\+", "\\,"))  %>%
+    filter(alpha == alpha_level) %>%
+    filter(test != "Naive-F") %>%
+    filter(q == q_level) 
+  
+  if(q_level == "q = 1"){
+    
+    dat <- dat %>%
+      mutate(cov_name = case_when(cov_test == "X1" ~ "Study-level, binary, large imbalance",
+                                  cov_test == "X2" ~ "Effect size-level, binary, large imbalance",
+                                  cov_test == "X3" ~ "Study-level, continuous, normal",
+                                  cov_test == "X4" ~ "Effect size-level, continuous, normal",
+                                  cov_test == "X5" ~ "Effect size-level, continuous, skewed"))
+    
+  }
+  
+  
+  p <- dat %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) %>%
+    #filter(beta == beta_level) %>%
+    ggplot(aes(x = m, y = rej_rate, fill = test)) + 
+    geom_boxplot(alpha = .5) + 
+    #scale_y_continuous(breaks = seq(0, 1, .2)) +
+    scale_fill_brewer(palette = "Set1") 
+  
+  if(q_level == "q = 1"){
+    p <- p + facet_grid(beta ~ cov_test + cov_name, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
+  } else {
+    p <- p + facet_grid(beta ~ cov_test, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
+    
+  }
+  
+  p +
+    labs(x = "Number of Studies", y = "Power", fill = "") +
+    #ggtitle(bquote(beta == .(beta_level))) + 
+    theme_bw() +
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+}
+
+
+
+
+create_power_covs(alpha_level = ".05", q_level = "q = 1")
+ggsave("sim_results/graphs/power_05_q1.png", device = "png", dpi = 500, height = 7, width = 13)
+
+
+create_power_covs(alpha_level = ".01", q_level = "q = 1")
+ggsave("sim_results/graphs/power_01_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_covs(alpha_level = ".10", q_level = "q = 1")
+ggsave("sim_results/graphs/power_10_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_covs(alpha_level = ".05", q_level = "q = 2")
+ggsave("sim_results/graphs/power_05_q2.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_covs(alpha_level = ".05", q_level = "q = 3")
+ggsave("sim_results/graphs/power_05_q3.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_covs(alpha_level = ".05", q_level = "q = 4")
+ggsave("sim_results/graphs/power_05_q4.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_covs(alpha_level = ".05", q_level = "q = 5")
+ggsave("sim_results/graphs/power_05_q5.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_rat_graph_covs <- function(alpha_level, q_level, dat = power_ratio){
+  
+  
+  dat <- dat %>%
+    mutate(cov_test = str_replace_all(cov_test, "\\+", "\\,"))  %>%
+    filter(alpha == alpha_level) %>%
+    filter(q == q_level) %>%
+    mutate(beta = ifelse(str_detect(beta_type, "1"), .1, .5)) 
+  # filter(beta == beta_level) %>%
+  
+  if(q_level == "q = 1"){
+    
+    dat <- dat %>%
+      mutate(cov_name = case_when(cov_test == "X1" ~ "Study-level, binary, large imbalance",
+                                  cov_test == "X2" ~ "Effect size-level, binary, large imbalance",
+                                  cov_test == "X3" ~ "Study-level, continuous, normal",
+                                  cov_test == "X4" ~ "Effect size-level, continuous, normal",
+                                  cov_test == "X5" ~ "Effect size-level, continuous, skewed"))
+    
+  }
+  
+  p <- dat %>%
+    ggplot(aes(x = m, y = power_ratio, fill = m)) + 
+    geom_boxplot(alpha = .5) + 
+    geom_hline(yintercept = 1, linetype = "solid") +
+    ylim(c(0, NA)) +
+    scale_fill_brewer(palette = "Dark2") 
+  
+  if(q_level == "q = 1"){
+    p <- p + facet_grid(beta ~ cov_test + cov_name, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
+  } else {
+    p <- p + facet_grid(beta ~ cov_test, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
+    
+  }
+  
+  p +
+    labs(x = "Number of Studies", y = "Power Ratio: HTZ/ CWB") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+  
+}
+
+
+create_power_rat_graph_covs(alpha_level = ".05", q_level = "q = 1")
+ggsave("sim_results/graphs/power_rat_05_q1.png", device = "png", dpi = 500, height = 7, width = 13)
+
+create_power_rat_graph_covs(alpha_level = ".01", q_level = "q = 1")
+ggsave("sim_results/graphs/power_rat_01_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_rat_graph_covs(alpha_level = ".10", q_level = "q = 1")
+ggsave("sim_results/graphs/power_rat_10_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_rat_graph_covs(alpha_level = ".05", q_level = "q = 2")
+ggsave("sim_results/graphs/power_rat_05_q2.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_rat_graph_covs(alpha_level = ".05", q_level = "q = 3")
+ggsave("sim_results/graphs/power_rat_05_q3.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_power_rat_graph_covs(alpha_level = ".05", q_level = "q = 4")
+ggsave("sim_results/graphs/power_rat_05_q4.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_power_rat_graph_covs(alpha_level = ".05", q_level = "q = 5")
+ggsave("sim_results/graphs/power_rat_05_q5.png", device = "png", dpi = 500, height = 7, width = 12)
 

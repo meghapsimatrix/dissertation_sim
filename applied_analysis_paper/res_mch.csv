@@ -1,0 +1,6 @@
+Method,F,delta,df_num,df_denom,p
+Naive-F,1.496,1,5,19,0.238
+EDT,0.948,1,5,Inf,0.449
+HTZ,0.632,0.56,5,5.097,0.687
+CWB,NA,NA,NA,NA,0.338
+CWB Adjusted,NA,NA,NA,NA,0.354
