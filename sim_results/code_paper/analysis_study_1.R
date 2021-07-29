@@ -11,7 +11,7 @@ files_james <- list.files("sim_results/results_james", full.names = TRUE)
 
 all_files <- c(files, files_james)
 
-load_res <- function(file){
+load_res <- function(file) {
   
   load(file)
   results
@@ -51,20 +51,16 @@ glimpse(results)
 
 # Naive -------------------------------------------------------------------
 
-mcse_01 <- sqrt((.01 * (1 - .01))/ K_all)
-mcse_05 <- sqrt((.05 * (1 - .05))/ K_all)
-mcse_10 <- sqrt((.10 * (1 - .10))/ K_all)
+data_int <- 
+  tibble(alpha = c(".01", ".05", ".10"),
+         int = c(.01, .05, .10)) %>%
+  mutate(
+    mcse = sqrt(int * (1 - int) / K_all),
+    error = int + 1.96 * mcse
+  )
 
-
-
-data_int <- tibble(alpha = c(".01", 
-                             ".05", 
-                             ".10"),
-                   int = c(.01, .05, .10),
-                   mcse = c(mcse_01, mcse_05, mcse_10)) %>%
-  mutate(error = int + 1.96 * mcse)
-
-naive_dat <- results %>%
+naive_dat <- 
+  results %>%
   select(test, beta_type, cov_test, rho, tau, m, contrasts, starts_with("rej_rate")) %>%
   filter(test == "Naive-F", beta_type == "A") %>%
   mutate(m = as.character(m),
@@ -96,7 +92,6 @@ naive_dat %>%
 
 ggsave("sim_results/graphs_paper/study_1/naivef.png", device = "png", dpi = 500, height = 7, width = 12)
 
-
 naive_dat %>%
   ungroup() %>%
   group_by(alpha) %>%
@@ -104,7 +99,6 @@ naive_dat %>%
             max = max(mcse))
 
 # Rej Rate Mean -----------------------------------------------------------
-
 
 type1_dat <- results %>%
     filter(beta_type == "A") %>%
@@ -254,18 +248,16 @@ ggsave("sim_results/graphs_paper/study_1/power_10_abs.png", device = "png", dpi 
 
 # the 10 study one throws it off so bad
 
-power_ratio <- power_dat %>%
-  filter(test %in% c("CWB", "HTZ")) %>%
+power_ratio <- 
+  power_dat %>%
   select(-c(starts_with("mcse"))) %>%
   spread(test, rej_rate) %>%
   mutate(power_diff = CWB - HTZ,
-         power_ratio = HTZ/CWB) %>%
-  group_by(m, rho, tau, alpha, q, beta_type, cov_test) %>%
-  summarize_at(vars(power_ratio), mean)
+         power_ratio = HTZ / CWB)
 
 
 
-create_power_rat_graph <- function(dat, alpha_level){
+create_power_rat_graph <- function(dat, alpha_level) {
   
   
   dat %>%
@@ -296,6 +288,91 @@ create_power_rat_graph(power_ratio, alpha_level = ".10")
 ggsave("sim_results/graphs_paper/study_1/power_10.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
+# Power scatterplots ----------------------------------------------------------
+
+power_scatter <- function(data, x, y) {
+  
+  ggplot(data, aes_string(x, y, color = "m", shape = "m")) + 
+    geom_point(alpha = 0.5) + 
+    geom_abline(slope = 1, intercept = 0) + 
+    scale_x_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
+    scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
+    facet_wrap(~ q, scales = "free") + 
+    scale_color_brewer(palette = "Dark2") +
+    scale_shape_manual(values = c("diamond","circle","triangle","square")) + 
+    labs(
+      x = paste("Power of", x), 
+      y = paste("Power of", y),
+      color = "Number of studies (m)", shape = "Number of studies (m)"
+    ) + 
+    theme_bw() +
+    theme(
+      legend.position = "bottom",
+      plot.caption=element_text(hjust = 0, size = 10)
+    )  
+}
+
+# Power comparison at alpha = .05 (for main text)
+power_ratio %>%
+  filter(alpha == ".05") %>%
+  power_scatter(x = "HTZ", y = "CWB")
+
+ggsave("sim_results/graphs_paper/study_1/power_05_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# Power comparison at alpha = .01 (for supplementary)  
+power_ratio %>%
+  filter(alpha == ".01") %>%
+  power_scatter(x = "HTZ", y = "CWB")
+
+ggsave("sim_results/graphs_paper/study_1/power_01_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# Power comparison at alpha = .10 (for supplementary)  
+power_ratio %>%
+  filter(alpha == ".10") %>%
+  power_scatter(x = "HTZ", y = "CWB")
+
+ggsave("sim_results/graphs_paper/study_1/power_10_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# By covariate combination (all for supplementary)
+
+power_ratio %>%
+  filter(alpha == ".05") %>%
+  mutate(q_cov = paste0(q, " (", cov_test,")")) %>%
+  power_scatter(x = "HTZ", y = "CWB") + 
+  facet_wrap(~ q_cov, ncol = 5) 
+
+ggsave("sim_results/graphs_paper/study_1/power_05_scatter_covs.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+power_ratio %>%
+  filter(alpha == ".01") %>%
+  mutate(q_cov = paste0(q, " (", cov_test,")")) %>%
+  power_scatter(x = "HTZ", y = "CWB") + 
+  facet_wrap(~ q_cov, ncol = 5) 
+
+ggsave("sim_results/graphs_paper/study_1/power_01_scatter_covs.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+power_ratio %>%
+  filter(alpha == ".10") %>%
+  mutate(q_cov = paste0(q, " (", cov_test,")")) %>%
+  power_scatter(x = "HTZ", y = "CWB") + 
+  facet_wrap(~ q_cov, ncol = 5) 
+
+ggsave("sim_results/graphs_paper/study_1/power_10_scatter_covs.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# CWB versus CWB-adjusted (for supplementary)
+
+power_ratio %>%
+  filter(alpha == ".05") %>%
+  power_scatter(x = "CWB", y = "`CWB Adjusted`") + 
+  labs(y = "Power of CWB-adjusted")
+
+ggsave("sim_results/graphs_paper/study_1/power_05_scatter_cwbs.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 # Sensitivity Analyses ---------------------------------------------------
@@ -460,7 +537,7 @@ create_power_covs <- function(alpha_level, dat = power_dat, q_level){
     p <- p + facet_grid(beta ~ cov_test + cov_name, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
   } else {
     p <- p + facet_grid(beta ~ cov_test, scales = "free_y", labeller = label_bquote(rows = beta == .(beta)))
-
+    
   }
   
   p +
@@ -624,6 +701,23 @@ create_type1_covs(q_level = "q = 1",
                    dat = type1_dat %>% filter(alpha == ".05"))
 
 
-create_power_covs(alpha_level = ".05", q_level = "q = 1")
-ggsave("sim_results/graphs_paper/study_1/type1_05_q1.png", device = "png", dpi = 500, height = 7, width = 13)
+ggsave("sim_results/graphs_paper/study_1/type1_05_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_type1_covs(q_level = "q = 1",
+                  intercept = .01, 
+                  error = data_int %>% filter(int == .01) %>% pull(error),
+                  dat = type1_dat %>% filter(alpha == ".01"))
+
+
+ggsave("sim_results/graphs_paper/study_1/type1_01_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_type1_covs(q_level = "q = 1",
+                  intercept = .10, 
+                  error = data_int %>% filter(int == .10) %>% pull(error),
+                  dat = type1_dat %>% filter(alpha == ".10"))
+
+
+ggsave("sim_results/graphs_paper/study_1/type1_10_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
 

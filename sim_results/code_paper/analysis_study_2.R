@@ -373,6 +373,106 @@ b + w
 
 ggsave("sim_results/graphs_paper/study_2/power_10_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
+# Power scatterplots ----------------------------------------------------------
+
+power_ratio <- 
+  power_dat %>%
+  select(-c(starts_with("mcse"))) %>%
+  spread(test, rej_rate) %>%
+  mutate(power_diff = CWB - HTZ,
+         power_ratio = HTZ / CWB)
+
+power_scatter <- function(data, cov, x, y, title) {
+  
+  data %>%
+    filter(cov_type == cov) %>%
+  ggplot(aes_string(x, y, color = "m", shape = "m")) + 
+    geom_point(alpha = 0.5) + 
+    geom_abline(slope = 1, intercept = 0) + 
+    scale_x_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
+    scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
+    facet_wrap(~ q, scales = "free") + 
+    scale_color_brewer(palette = "Dark2") +
+    scale_shape_manual(values = c("diamond","circle","triangle","square")) + 
+    labs(
+      x = paste("Power of", x), 
+      y = paste("Power of", y),
+      color = "Number of studies (m)", shape = "Number of studies (m)"
+    ) + 
+    ggtitle(title) +
+    theme_bw() +
+    theme(
+      legend.position = "bottom",
+      plot.caption=element_text(hjust = 0, size = 10)
+    )  
+}
+
+# Power comparison at alpha = .05 (for main text)
+b <- power_ratio %>%
+  filter(alpha == ".05") %>%
+  power_scatter(cov = "between", x = "HTZ", y = "CWB", 
+                title = "Study-level covariate type")
+
+w <- power_ratio %>%
+  filter(alpha == ".05") %>%
+  power_scatter(cov = "within", x = "HTZ", y = "CWB", 
+                title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs_paper/study_2/power_05_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# Power comparison at alpha = .01 (for supplementary)  
+b <- power_ratio %>%
+  filter(alpha == ".01") %>%
+  power_scatter(cov = "between", x = "HTZ", y = "CWB", 
+                title = "Study-level covariate type")
+
+w <- power_ratio %>%
+  filter(alpha == ".01") %>%
+  power_scatter(cov = "within", x = "HTZ", y = "CWB", 
+                title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs_paper/study_2/power_01_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+# Power comparison at alpha = .10 (for supplementary)  
+b <- power_ratio %>%
+  filter(alpha == ".10") %>%
+  power_scatter(cov = "between", x = "HTZ", y = "CWB", 
+                title = "Study-level covariate type")
+
+w <- power_ratio %>%
+  filter(alpha == ".10") %>%
+  power_scatter(cov = "within", x = "HTZ", y = "CWB", 
+                title = "Effect size-level covariate type")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave("sim_results/graphs_paper/study_2/power_10_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+
+# CWB versus CWB-adjusted (for supplementary)
+
+b <- power_ratio %>%
+  filter(alpha == ".05") %>%
+  power_scatter(cov = "between", x = "CWB", y = "`CWB Adjusted`", title =  "Study-level covariate type") + 
+  labs(y = "Power of CWB-adjusted")
+
+w <- power_ratio %>%
+  filter(alpha == ".05") %>%
+  power_scatter(cov = "within", x = "CWB", y = "`CWB Adjusted`", title =  "Effect size-level covariate type") + 
+  labs(y = "Power of CWB-adjusted")
+
+b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+
+ggsave("sim_results/graphs_paper/study_2/power_05_scatter_cwbs.png", device = "png", dpi = 500, height = 7, width = 12)
+
 
 # Sensitivity Analyses ---------------------------------------------------
 
@@ -504,7 +604,7 @@ w <- create_power_tau_graph(dat = power_ratio,
 
 b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave("sim_results/graphs/study_2/tau_power_052.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_2/tau_power_052.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 
