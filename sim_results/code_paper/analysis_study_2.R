@@ -420,7 +420,7 @@ w <- power_ratio %>%
 
 b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave("sim_results/graphs_paper/study_2/power_05_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_2/power_05_scatter_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 # Power comparison at alpha = .01 (for supplementary)  
@@ -436,7 +436,7 @@ w <- power_ratio %>%
 
 b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave("sim_results/graphs_paper/study_2/power_01_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_2/power_01_scatter_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 # Power comparison at alpha = .10 (for supplementary)  
@@ -452,7 +452,7 @@ w <- power_ratio %>%
 
 b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave("sim_results/graphs_paper/study_2/power_10_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_2/power_10_scatter_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 
@@ -471,7 +471,7 @@ w <- power_ratio %>%
 b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
 
-ggsave("sim_results/graphs_paper/study_2/power_05_scatter_cwbs.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_2/power_05_scatter_cwbs_2.png", device = "png", dpi = 500, height = 7, width = 12)
 
 
 # Sensitivity Analyses ---------------------------------------------------
