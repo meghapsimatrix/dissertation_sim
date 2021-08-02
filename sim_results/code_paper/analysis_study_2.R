@@ -2,6 +2,8 @@ library(tidyverse)
 library(patchwork)
 
 
+# load and clean data -----------------------------------------------------
+
 load("sim_results/results_study2/sim_test_study_2.RData")
 
 K_all <- results %>%
@@ -17,6 +19,9 @@ results <- results %>%
 
 
 
+# mcse --------------------------------------------------------------------
+
+
 mcse_01 <- sqrt((.01 * (1 - .01))/ K_all)
 mcse_05 <- sqrt((.05 * (1 - .05))/ K_all)
 mcse_10 <- sqrt((.10 * (1 - .10))/ K_all)
@@ -29,6 +34,9 @@ data_int <- tibble(alpha = c(".01",
                    int = c(.01, .05, .10),
                    mcse = c(mcse_01, mcse_05, mcse_10)) %>%
   mutate(error = int + 1.96 * mcse)
+
+
+# naive f type 1 ----------------------------------------------------------
 
 naive_dat <- results %>%
   select(test, beta_1, rho, tau, m, cov_type, cat_num, starts_with("rej_rate")) %>%
@@ -62,7 +70,7 @@ create_naive_graph <- function(level){
     geom_hline(data = data_int %>% filter(alpha == level), aes(yintercept = error), linetype = "dashed") + 
     geom_point(alpha = .5) + 
     #scale_y_continuous(breaks = seq(0, 1, .1)) + 
-    scale_fill_brewer(palette = "Dark2") +
+    scale_color_brewer(palette = "Dark2") +
     facet_grid(cov_type ~ q, scales = "free_y") + 
     labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
     #ggtitle(title) +
@@ -175,7 +183,7 @@ create_type1_graph <- function(dat, intercept, error, br, cov, title){
     geom_point(alpha = .5) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
-    scale_fill_brewer(palette = "Set1") +
+    scale_color_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate") + 
     ggtitle(title) +
@@ -364,7 +372,7 @@ create_type1_tau_graph <- function(dat, intercept, error, br, cov, title){
     scale_color_manual(values = c("plum2", "plum4")) +
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
+    labs(x = "Method", y = "Type 1 Error Rate", color = expression(tau)) + 
     ggtitle(title) + 
     theme_bw() +
     theme(legend.position = "bottom")
@@ -406,7 +414,7 @@ create_type1_rho_graph <- function(dat, intercept, error, br, cov, title){
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     scale_color_manual(values = c("firebrick2", "firebrick4")) +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(rho)) + 
+    labs(x = "Method", y = "Type 1 Error Rate", color = expression(rho)) + 
     ggtitle(title) + 
     theme_bw() +
     theme(legend.position = "bottom")
