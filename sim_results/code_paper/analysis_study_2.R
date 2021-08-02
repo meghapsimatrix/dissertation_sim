@@ -334,7 +334,7 @@ b <- power_ratio %>%
 w <- power_ratio %>%
   filter(alpha == ".05") %>%
   power_scatter(cov = "within", x = "CWB", y = "`CWB Adjusted`", title =  "Effect size-level covariate type") + 
-  labs(y = "Power of CWB-adjusted")
+  labs(y = "Power of CWB Adjusted")
 
 b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
