@@ -337,7 +337,7 @@ create_type1_tau_graph <- function(dat, intercept, error, br, cov, title){
     ggplot(aes(x = test, y = rej_rate, color = tau)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
-    geom_point(alpha = .5) + 
+    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_color_manual(values = c("plum2", "plum4")) +
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
@@ -362,9 +362,10 @@ w <- create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        cov = "within",
                        title = "Effect size-level covariate type")
 
-b + w  + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+w / b + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave("sim_results/graphs_paper/study_2/tau_052.png", device = "png", dpi = 500, height = 7, width = 14)
+
+ggsave("sim_results/graphs_paper/study_2/tau_052.png", device = "png", dpi = 500, height = 8, width = 7)
 
 
 
@@ -379,7 +380,7 @@ create_type1_rho_graph <- function(dat, intercept, error, br, cov, title){
     ggplot(aes(x = test, y = rej_rate, color = rho)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
-    geom_point(alpha = .5, position = "dodge") + 
+    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     scale_color_manual(values = c("firebrick2", "firebrick4")) +
@@ -405,9 +406,9 @@ w <- create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        cov = "within",
                        title = "Effect size-level covariate type")
 
-b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+w / b + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave("sim_results/graphs_paper/study_2/rho_052.png", device = "png", dpi = 500, height = 7, width = 14)
+ggsave("sim_results/graphs_paper/study_2/rho_052.png", device = "png", dpi = 500, height = 8, width = 7)
 
 
 
