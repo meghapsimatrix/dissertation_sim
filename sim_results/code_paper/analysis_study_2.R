@@ -68,8 +68,8 @@ create_naive_graph <- function(level){
     ggplot(aes(x = m, y = rej_rate, color = m)) +
     geom_hline(data = data_int %>% filter(alpha == level), aes(yintercept = int), linetype = "solid") + 
     geom_hline(data = data_int %>% filter(alpha == level), aes(yintercept = error), linetype = "dashed") + 
-    geom_point(alpha = .5) + 
-    #scale_y_continuous(breaks = seq(0, 1, .1)) + 
+    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
+    ylim(c(0, NA)) +
     scale_color_brewer(palette = "Dark2") +
     facet_grid(cov_type ~ q, scales = "free_y") + 
     labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
@@ -180,7 +180,7 @@ create_type1_graph <- function(dat, intercept, error, br, cov, title){
     ggplot(aes(x = test, y = rej_rate, color = test)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
-    geom_point(alpha = .5) + 
+    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     scale_color_brewer(palette = "Set1") +
@@ -193,22 +193,22 @@ create_type1_graph <- function(dat, intercept, error, br, cov, title){
 }
 
 
+b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
+                        intercept = .05,
+                        error = data_int %>% filter(int == .05) %>% pull(error), 
+                        cov = "between",
+                        title = "Study-level covariate type")
 
-b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), 
-                   intercept = .05, 
-                   error = data_int %>% filter(int == .05) %>% pull(error), 
-                   cov = "between",
-                   title = "Study-level covariate type")
-
-w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"), 
-                        intercept = .05, 
+w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
+                        intercept = .05,
                         error = data_int %>% filter(int == .05) %>% pull(error), 
                         cov = "within",
                         title = "Effect size-level covariate type")
 
-b + w
+w / b
 
-ggsave("sim_results/graphs_paper/study_2/type1_05_2.png", device = "png", dpi = 500, height = 7, width = 14)
+ggsave("sim_results/graphs_paper/study_2/type1_05_2.png", device = "png", 
+       dpi = 500, height = 8, width = 7)
 
 # Type 1 error ------------------------------------------------------------
 # 01
@@ -225,10 +225,10 @@ w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
                         cov = "within",
                         title = "Effect size-level covariate type")
 
-b + w
+w / b
 
-ggsave("sim_results/graphs_paper/study_2/type1_01_2.png", device = "png", dpi = 500, height = 7, width = 14)
-
+ggsave("sim_results/graphs_paper/study_2/type1_01_2.png", device = "png", 
+       dpi = 500, height = 8, width = 7)
 # Type 1 error ------------------------------------------------------------
 # 10
 
@@ -244,9 +244,9 @@ w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"),
                         cov = "within",
                         title = "Effect size-level covariate type")
 
-b + w
+w / b
 
-ggsave("sim_results/graphs_paper/study_2/type1_10_2.png", device = "png", dpi = 500, height = 7, width = 14)
+ggsave("sim_results/graphs_paper/study_2/type1_10_2.png", device = "png", dpi = 500, height = 8, width = 7)
 
 
 # Power scatterplots ----------------------------------------------------------
@@ -258,16 +258,16 @@ power_ratio <-
   mutate(power_diff = CWB - HTZ,
          power_ratio = HTZ / CWB)
 
-power_scatter <- function(data, cov, x, y, title) {
+power_scatter <- function(data, x, y) {
   
   data %>%
-    filter(cov_type == cov) %>%
+    mutate(cov_type = if_else(cov_type == "between", "Study-level", "Effect size-level")) %>%
   ggplot(aes_string(x, y, color = "m", shape = "m")) + 
     geom_point(alpha = 0.5) + 
     geom_abline(slope = 1, intercept = 0) + 
     scale_x_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
     scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
-    facet_wrap(~ q, scales = "free") + 
+    facet_grid(cov_type ~ q, scales = "free") + 
     scale_color_brewer(palette = "Dark2") +
     scale_shape_manual(values = c("diamond","circle","triangle","square")) + 
     labs(
@@ -275,7 +275,7 @@ power_scatter <- function(data, cov, x, y, title) {
       y = paste("Power of", y),
       color = "Number of studies (m)", shape = "Number of studies (m)"
     ) + 
-    ggtitle(title) +
+   # ggtitle(title) +
     theme_bw() +
     theme(
       legend.position = "bottom",
@@ -284,67 +284,37 @@ power_scatter <- function(data, cov, x, y, title) {
 }
 
 # Power comparison at alpha = .05 (for main text)
-b <- power_ratio %>%
+power_ratio %>%
   filter(alpha == ".05") %>%
-  power_scatter(cov = "between", x = "HTZ", y = "CWB", 
-                title = "Study-level covariate type")
+  power_scatter(x = "HTZ", y = "CWB")
 
-w <- power_ratio %>%
-  filter(alpha == ".05") %>%
-  power_scatter(cov = "within", x = "HTZ", y = "CWB", 
-                title = "Effect size-level covariate type")
 
-b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
-ggsave("sim_results/graphs_paper/study_2/power_05_scatter_2.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_2/power_05_scatter_2.png", device = "png", dpi = 500, height = 5, width = 7)
 
 
 # Power comparison at alpha = .01 (for supplementary)  
-b <- power_ratio %>%
+power_ratio %>%
   filter(alpha == ".01") %>%
-  power_scatter(cov = "between", x = "HTZ", y = "CWB", 
-                title = "Study-level covariate type")
+  power_scatter(x = "HTZ", y = "CWB")
 
-w <- power_ratio %>%
-  filter(alpha == ".01") %>%
-  power_scatter(cov = "within", x = "HTZ", y = "CWB", 
-                title = "Effect size-level covariate type")
 
-b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
-ggsave("sim_results/graphs_paper/study_2/power_01_scatter_2.png", device = "png", dpi = 500, height = 7, width = 12)
-
+ggsave("sim_results/graphs_paper/study_2/power_01_scatter_2.png", device = "png", dpi = 500, height = 5, width = 7)
 
 # Power comparison at alpha = .10 (for supplementary)  
-b <- power_ratio %>%
+power_ratio %>%
   filter(alpha == ".10") %>%
-  power_scatter(cov = "between", x = "HTZ", y = "CWB", 
-                title = "Study-level covariate type")
+  power_scatter(x = "HTZ", y = "CWB")
 
-w <- power_ratio %>%
-  filter(alpha == ".10") %>%
-  power_scatter(cov = "within", x = "HTZ", y = "CWB", 
-                title = "Effect size-level covariate type")
 
-b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
-ggsave("sim_results/graphs_paper/study_2/power_10_scatter_2.png", device = "png", dpi = 500, height = 7, width = 12)
-
+ggsave("sim_results/graphs_paper/study_2/power_10_scatter_2.png", device = "png", dpi = 500, height = 5, width = 7)
 
 
 # CWB versus CWB-adjusted (for supplementary)
 
-b <- power_ratio %>%
+power_ratio %>%
   filter(alpha == ".05") %>%
-  power_scatter(cov = "between", x = "CWB", y = "`CWB Adjusted`", title =  "Study-level covariate type") + 
+  power_scatter(x = "CWB", y = "`CWB Adjusted`") + 
   labs(y = "Power of CWB-adjusted")
-
-w <- power_ratio %>%
-  filter(alpha == ".05") %>%
-  power_scatter(cov = "within", x = "CWB", y = "`CWB Adjusted`", title =  "Effect size-level covariate type") + 
-  labs(y = "Power of CWB Adjusted")
-
-b + w + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
 
 ggsave("sim_results/graphs_paper/study_2/power_05_scatter_cwbs_2.png", device = "png", dpi = 500, height = 7, width = 12)

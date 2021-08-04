@@ -77,12 +77,13 @@ summary(naive_dat$mcse)
 
 
 naive_dat %>%
-  ggplot(aes(x = m, y = rej_rate, fill = m)) +
+  ggplot(aes(x = m, y = rej_rate, fill = m, color = m)) +
     geom_hline(data = data_int, aes(yintercept = int), linetype = "solid") + 
     geom_hline(data = data_int, aes(yintercept = error), linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
     scale_y_continuous(breaks = seq(0, 1, .1)) + 
     scale_fill_brewer(palette = "Dark2") +
+    scale_color_brewer(palette = "Dark2") +
     facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
     labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
     theme_bw() +
@@ -90,7 +91,7 @@ naive_dat %>%
           plot.caption=element_text(hjust = 0, size = 10))
   
 
-ggsave("sim_results/graphs_paper/study_1/naivef.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/naivef.png", device = "png", dpi = 500, height = 5, width = 7)
 
 naive_dat %>%
   ungroup() %>%
@@ -169,13 +170,14 @@ create_type1_graph <- function(dat, intercept, error){
     filter(test != "Naive-F")
   
   dat %>%
-    ggplot(aes(x = test, y = rej_rate, fill = test)) + 
+    ggplot(aes(x = test, y = rej_rate, fill = test, color = test)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) +
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     scale_fill_brewer(palette = "Set1") +
+    scale_color_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
     labs(x = "Method", y = "Type 1 Error Rate") + 
     theme_bw() +
@@ -189,7 +191,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
                    intercept = .05, 
                    error = data_int %>% filter(int == .05) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/type1_05.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/type1_05.png", device = "png", dpi = 500, height = 5, width = 7)
 
 # Type 1 error ------------------------------------------------------------
 # 01
@@ -198,7 +200,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
                    intercept = .01,
                    error = data_int %>% filter(int == .01) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/type1_01.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/type1_01.png", device = "png", dpi = 500, height = 5, width = 7)
 
 # Type 1 error ------------------------------------------------------------
 # 10
@@ -206,7 +208,7 @@ ggsave("sim_results/graphs_paper/study_1/type1_01.png", device = "png", dpi = 50
 create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10,
                    error = data_int %>% filter(int == .10) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/type1_10.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/type1_10.png", device = "png", dpi = 500, height = 5, width = 7)
 
 
 
@@ -323,15 +325,16 @@ create_type1_tau_graph <- function(dat, intercept, error, br){
   
   dat %>%
     mutate(tau = as.factor(tau)) %>%
-    ggplot(aes(x = test, y = rej_rate, fill = tau)) + 
+    ggplot(aes(x = test, y = rej_rate, fill = tau, color = tau)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5) + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_fill_manual(values = c("plum2", "plum4")) +
+    scale_color_manual(values = c("plum2", "plum4")) +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau)) + 
+    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(tau), color = expression(tau)) + 
     theme_bw() +
     theme(legend.position = "bottom")
 }
@@ -339,7 +342,7 @@ create_type1_tau_graph <- function(dat, intercept, error, br){
 create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, 
                        error = data_int %>% filter(int == .05) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/tau_05.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/tau_05.png", device = "png", dpi = 500, height = 5, width = 7)
 
 create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01,
                        error = data_int %>% filter(int == .01) %>% pull(error))
@@ -357,15 +360,16 @@ create_type1_rho_graph <- function(dat, intercept, error){
   
   dat %>%
     mutate(rho = as.factor(rho)) %>%
-    ggplot(aes(x = test, y = rej_rate, fill = rho)) + 
+    ggplot(aes(x = test, y = rej_rate, fill = rho, color = rho)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
     geom_boxplot(alpha = .5, position = "dodge") + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_fill_manual(values = c("firebrick2", "firebrick4")) +
+    scale_color_manual(values = c("firebrick2", "firebrick4")) +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(rho)) + 
+    labs(x = "Method", y = "Type 1 Error Rate", fill = expression(rho), color = expression(rho)) + 
     theme_bw() +
     theme(legend.position = "bottom")
 }
@@ -373,7 +377,7 @@ create_type1_rho_graph <- function(dat, intercept, error){
 create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05,
                        error = data_int %>% filter(int == .05) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/rho_05.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/rho_05.png", device = "png", dpi = 500, height = 5, width = 7)
 
 create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, 
                        error = data_int %>% filter(int == .01) %>% pull(error))
