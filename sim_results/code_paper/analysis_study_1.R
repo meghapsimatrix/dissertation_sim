@@ -385,3 +385,77 @@ create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .
                        error = data_int %>% filter(int == .10) %>% pull(error))
 
 
+
+# type 1 covs -------------------------------------------------------------
+
+create_type1_covs <- function(q_level,
+                              intercept, error, dat = power_dat){
+  
+  dat <- dat %>%
+    mutate(cov_test = str_replace_all(cov_test, "\\+", "\\,"))  %>%
+    #filter(alpha == alpha_level) %>%
+    filter(test != "Naive-F") %>%
+    filter(q == q_level) 
+  
+  if(q_level == "q = 1"){
+    
+    dat <- dat %>%
+      mutate(cov_name = case_when(cov_test == "X1" ~ "Study-level, binary, large imbalance",
+                                  cov_test == "X2" ~ "Effect size-level, binary, large imbalance",
+                                  cov_test == "X3" ~ "Study-level, continuous, normal",
+                                  cov_test == "X4" ~ "Effect size-level, continuous, normal",
+                                  cov_test == "X5" ~ "Effect size-level, continuous, skewed"))
+    
+  }
+  
+  
+  p <- dat %>%
+    ggplot(aes(x = test, y = rej_rate, fill = test, color = test)) + 
+    geom_hline(yintercept = intercept, linetype = "solid") + 
+    geom_hline(yintercept = error, linetype = "dashed") + 
+    geom_boxplot(alpha = .5) +
+    scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
+    scale_fill_brewer(palette = "Set1") +
+    scale_color_brewer(palette = "Set1")
+  
+  
+  if(q_level == "q = 1"){
+    p <- p + facet_grid(m ~ cov_test + cov_name, scales = "free_y")
+  } else {
+    p <- p + facet_grid(m ~ cov_test, scales = "free_y")
+    
+  }
+  
+  p +
+    labs(x = "Method", y = "Type 1 Error Rate") + 
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.caption=element_text(hjust = 0, size = 10))
+  
+}
+
+
+create_type1_covs(q_level = "q = 1",
+                  intercept = .05, 
+                  error = data_int %>% filter(int == .05) %>% pull(error),
+                  dat = type1_dat %>% filter(alpha == ".05"))
+
+
+ggsave("sim_results/graphs_paper/study_1/type1_05_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+
+create_type1_covs(q_level = "q = 1",
+                  intercept = .01, 
+                  error = data_int %>% filter(int == .01) %>% pull(error),
+                  dat = type1_dat %>% filter(alpha == ".01"))
+
+
+ggsave("sim_results/graphs_paper/study_1/type1_01_q1.png", device = "png", dpi = 500, height = 7, width = 12)
+
+create_type1_covs(q_level = "q = 1",
+                  intercept = .10, 
+                  error = data_int %>% filter(int == .10) %>% pull(error),
+                  dat = type1_dat %>% filter(alpha == ".10"))
+
+
+ggsave("sim_results/graphs_paper/study_1/type1_10_q1.png", device = "png", dpi = 500, height = 7, width = 12)
