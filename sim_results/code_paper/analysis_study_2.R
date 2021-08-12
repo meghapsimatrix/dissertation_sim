@@ -279,7 +279,9 @@ power_scatter <- function(data, x, y) {
     theme_bw() +
     theme(
       legend.position = "bottom",
-      plot.caption=element_text(hjust = 0, size = 10)
+      plot.caption=element_text(hjust = 0, size = 10),
+      legend.title=element_text(size = 10), 
+      legend.text=element_text(size = 10)
     )  
 }
 
