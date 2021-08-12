@@ -234,7 +234,7 @@ power_scatter <- function(data, x, y) {
     geom_abline(slope = 1, intercept = 0) + 
     scale_x_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
     scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
-    facet_wrap(~ q, scales = "free") + 
+    facet_wrap(~ q, scales = "free", ncol = 2) + 
     scale_color_brewer(palette = "Dark2") +
     scale_shape_manual(values = c("diamond","circle","triangle","square")) + 
     labs(
@@ -246,8 +246,8 @@ power_scatter <- function(data, x, y) {
     theme(
       legend.position = "bottom",
       plot.caption=element_text(hjust = 0, size = 10),
-      legend.title=element_text(size = 10), 
-      legend.text=element_text(size = 10)
+      legend.title=element_text(size = 11), 
+      legend.text=element_text(size = 11)
     )  
 }
 
@@ -256,7 +256,7 @@ power_ratio %>%
   filter(alpha == ".05") %>%
   power_scatter(x = "HTZ", y = "CWB")
 
-ggsave("sim_results/graphs_paper/study_1/power_05_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/power_05_scatter.png", device = "png", dpi = 500, height = 7, width = 5)
 
 
 # Power comparison at alpha = .01 (for supplementary)  
@@ -264,7 +264,7 @@ power_ratio %>%
   filter(alpha == ".01") %>%
   power_scatter(x = "HTZ", y = "CWB")
 
-ggsave("sim_results/graphs_paper/study_1/power_01_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/power_01_scatter.png", device = "png", dpi = 500, height = 7, width = 5)
 
 
 # Power comparison at alpha = .10 (for supplementary)  
@@ -272,7 +272,7 @@ power_ratio %>%
   filter(alpha == ".10") %>%
   power_scatter(x = "HTZ", y = "CWB")
 
-ggsave("sim_results/graphs_paper/study_1/power_10_scatter.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/power_10_scatter.png", device = "png", dpi = 500, height = 7, width = 5)
 
 
 # By covariate combination (all for supplementary)
@@ -311,7 +311,7 @@ power_ratio %>%
   power_scatter(x = "CWB", y = "`CWB Adjusted`") + 
   labs(y = "Power of CWB Adjusted")
 
-ggsave("sim_results/graphs_paper/study_1/power_05_scatter_cwbs.png", device = "png", dpi = 500, height = 7, width = 12)
+ggsave("sim_results/graphs_paper/study_1/power_05_scatter_cwbs.png", device = "png", dpi = 500, height = 7, width = 5)
 
 
 # Sensitivity Analyses ---------------------------------------------------

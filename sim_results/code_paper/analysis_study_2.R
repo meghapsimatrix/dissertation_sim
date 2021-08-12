@@ -280,8 +280,9 @@ power_scatter <- function(data, x, y) {
     theme(
       legend.position = "bottom",
       plot.caption=element_text(hjust = 0, size = 10),
-      legend.title=element_text(size = 10), 
-      legend.text=element_text(size = 10)
+      legend.title=element_text(size = 11), 
+      legend.text=element_text(size = 11),
+      panel.spacing = unit(1, "lines")
     )  
 }
 
