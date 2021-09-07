@@ -26,6 +26,7 @@ results <- results %>%
 
 # check iterations --------------------------------------------------------
 
+
 results %>%
   filter(K < 50)
 
@@ -191,7 +192,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
                    intercept = .05, 
                    error = data_int %>% filter(int == .05) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/type1_05.png", device = "png", dpi = 500, height = 5, width = 7)
+ggsave("sim_results/graphs_paper/study_1/type1_05.png", device = "png", dpi = 500, height = 7, width = 7)
 
 # Type 1 error ------------------------------------------------------------
 # 01
@@ -200,7 +201,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
                    intercept = .01,
                    error = data_int %>% filter(int == .01) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/type1_01.png", device = "png", dpi = 500, height = 5, width = 7)
+ggsave("sim_results/graphs_paper/study_1/type1_01.png", device = "png", dpi = 500, height = 7, width = 7)
 
 # Type 1 error ------------------------------------------------------------
 # 10
@@ -208,7 +209,7 @@ ggsave("sim_results/graphs_paper/study_1/type1_01.png", device = "png", dpi = 50
 create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), intercept = .10,
                    error = data_int %>% filter(int == .10) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/type1_10.png", device = "png", dpi = 500, height = 5, width = 7)
+ggsave("sim_results/graphs_paper/study_1/type1_10.png", device = "png", dpi = 500, height = 7, width = 7)
 
 
 
@@ -254,7 +255,8 @@ power_scatter <- function(data, x, y) {
 # Power comparison at alpha = .05 (for main text)
 power_ratio %>%
   filter(alpha == ".05") %>%
-  power_scatter(x = "HTZ", y = "CWB")
+  power_scatter(x = "HTZ", y = "CWB") +
+  theme(legend.position = c(.75, .15))
 
 ggsave("sim_results/graphs_paper/study_1/power_05_scatter.png", device = "png", dpi = 500, height = 7, width = 5)
 
@@ -262,7 +264,8 @@ ggsave("sim_results/graphs_paper/study_1/power_05_scatter.png", device = "png", 
 # Power comparison at alpha = .01 (for supplementary)  
 power_ratio %>%
   filter(alpha == ".01") %>%
-  power_scatter(x = "HTZ", y = "CWB")
+  power_scatter(x = "HTZ", y = "CWB") +
+  theme(legend.position = c(.75, .15))
 
 ggsave("sim_results/graphs_paper/study_1/power_01_scatter.png", device = "png", dpi = 500, height = 7, width = 5)
 
@@ -270,7 +273,8 @@ ggsave("sim_results/graphs_paper/study_1/power_01_scatter.png", device = "png", 
 # Power comparison at alpha = .10 (for supplementary)  
 power_ratio %>%
   filter(alpha == ".10") %>%
-  power_scatter(x = "HTZ", y = "CWB")
+  power_scatter(x = "HTZ", y = "CWB") +
+  theme(legend.position = c(.75, .15))
 
 ggsave("sim_results/graphs_paper/study_1/power_10_scatter.png", device = "png", dpi = 500, height = 7, width = 5)
 
@@ -309,7 +313,8 @@ ggsave("sim_results/graphs_paper/study_1/power_10_scatter_covs.png", device = "p
 power_ratio %>%
   filter(alpha == ".05") %>%
   power_scatter(x = "CWB", y = "`CWB Adjusted`") + 
-  labs(y = "Power of CWB Adjusted")
+  labs(y = "Power of CWB Adjusted") +
+  theme(legend.position = c(.75, .15))
 
 ggsave("sim_results/graphs_paper/study_1/power_05_scatter_cwbs.png", device = "png", dpi = 500, height = 7, width = 5)
 
@@ -344,7 +349,7 @@ create_type1_tau_graph <- function(dat, intercept, error, br){
 create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05, 
                        error = data_int %>% filter(int == .05) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/tau_05.png", device = "png", dpi = 500, height = 5, width = 7)
+ggsave("sim_results/graphs_paper/study_1/tau_05.png", device = "png", dpi = 500, height = 7, width = 7)
 
 create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01,
                        error = data_int %>% filter(int == .01) %>% pull(error))
@@ -379,7 +384,7 @@ create_type1_rho_graph <- function(dat, intercept, error){
 create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"), intercept = .05,
                        error = data_int %>% filter(int == .05) %>% pull(error))
 
-ggsave("sim_results/graphs_paper/study_1/rho_05.png", device = "png", dpi = 500, height = 5, width = 7)
+ggsave("sim_results/graphs_paper/study_1/rho_05.png", device = "png", dpi = 500, height = 7, width = 7)
 
 create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".01"), intercept = .01, 
                        error = data_int %>% filter(int == .01) %>% pull(error))
