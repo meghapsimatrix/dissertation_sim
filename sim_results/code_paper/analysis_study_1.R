@@ -89,7 +89,9 @@ naive_dat %>%
     labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
     theme_bw() +
     theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
+          plot.caption=element_text(hjust = 0, size = 10),
+          legend.title=element_text(size = 11), 
+          legend.text=element_text(size = 11))
   
 
 ggsave("sim_results/graphs_paper/study_1/naivef.png", device = "png", dpi = 500, height = 5, width = 7)
@@ -231,7 +233,7 @@ power_ratio <-
 power_scatter <- function(data, x, y) {
   
   ggplot(data, aes_string(x, y, color = "m", shape = "m")) + 
-    geom_point(alpha = 0.5) + 
+    geom_point(alpha = 0.5, size = 2.2) + 
     geom_abline(slope = 1, intercept = 0) + 
     scale_x_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
     scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 

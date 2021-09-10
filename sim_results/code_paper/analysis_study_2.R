@@ -1,5 +1,5 @@
 library(tidyverse)
-library(patchwork)
+#library(patchwork)
 
 
 # load and clean data -----------------------------------------------------
@@ -59,40 +59,27 @@ naive_check <- naive_dat %>%
             max = max(rej_rate),
             median = median(rej_rate))
 
-create_naive_graph <- function(level){
-
   naive_dat %>%
-    filter(alpha == level) %>%
     mutate(cov_type = if_else(cov_type == "between", "Study-level",
                               "Effect size-level")) %>%
-    ggplot(aes(x = m, y = rej_rate, color = m)) +
-    geom_hline(data = data_int %>% filter(alpha == level), aes(yintercept = int), linetype = "solid") + 
-    geom_hline(data = data_int %>% filter(alpha == level), aes(yintercept = error), linetype = "dashed") + 
-    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
-    ylim(c(0, NA)) +
+    ggplot(aes(x = m, y = rej_rate, color = m, shape = cov_type)) +
+    geom_hline(data = data_int, aes(yintercept = int), linetype = "solid") + 
+    geom_hline(data = data_int, aes(yintercept = error), linetype = "dashed") + 
+    geom_point(alpha = .5, size = 2.2, position = position_jitterdodge()) + 
+    scale_y_continuous(breaks = seq(0, 1, .1)) + 
+    scale_fill_brewer(palette = "Dark2") +
     scale_color_brewer(palette = "Dark2") +
-    facet_grid(cov_type ~ q, scales = "free_y") + 
-    labs(x = "Number of Studies", y = "Type 1 Error Rate") + 
-    #ggtitle(title) +
+    facet_grid(alpha ~ q, scales = "free_y",  labeller = label_bquote(rows = alpha == .(alpha))) + 
+    labs(x = "Number of Studies", y = "Type 1 Error Rate", shape = "", fill = "", color = "") + 
     theme_bw() +
-    theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
-}  
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10),
+          legend.title=element_text(size = 11), 
+          legend.text=element_text(size = 11))
+    
+    
+ggsave("sim_results/graphs_paper/study_2/naivef_2.png", device = "png", dpi = 500, height = 5, width = 7)
 
-
-create_naive_graph(level = ".05")
-
-ggsave("sim_results/graphs_paper/study_2/naivef_05_2.png", device = "png", dpi = 500, height = 5, width = 7)
-
-
-create_naive_graph(level = ".01")
-
-ggsave("sim_results/graphs_paper/study_2/naivef_01_2.png", device = "png", dpi = 500, height = 5, width = 7)
-
-
-create_naive_graph(level = ".10")
-
-ggsave("sim_results/graphs_paper/study_2/naivef_10_2.png", device = "png", dpi = 500, height = 5, width = 7)
 
 
 naive_dat %>%
@@ -170,83 +157,58 @@ power_mcse <- power_dat %>%
 # Type 1 error ------------------------------------------------------------
 
 
-create_type1_graph <- function(dat, intercept, error, br, cov, title){
+create_type1_graph <- function(dat, intercept, error){
   
   dat <- dat %>%
     filter(test != "Naive-F") %>%
-    filter(cov_type == cov)
+    mutate(cov_type = if_else(cov_type == "between", "Study-level",
+                              "Effect size-level"))
   
   dat %>%
-    ggplot(aes(x = test, y = rej_rate, color = test)) + 
+    ggplot(aes(x = test, y = rej_rate, color = test, shape = cov_type)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
-    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
+    geom_point(alpha = .5, size = 2.2, position = position_jitterdodge()) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     scale_color_brewer(palette = "Set1") +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate") + 
-    ggtitle(title) +
+    labs(x = "Method", y = "Type 1 Error Rate", shape = "", color = "") + 
     theme_bw() +
-    theme(legend.position = "none",
-          plot.caption=element_text(hjust = 0, size = 10))
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10),
+          legend.title=element_text(size = 11), 
+          legend.text=element_text(size = 11))
 }
 
 
-b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
-                        intercept = .05,
-                        error = data_int %>% filter(int == .05) %>% pull(error), 
-                        cov = "between",
-                        title = "Study-level covariate type")
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
+                   intercept = .05,
+                   error = data_int %>% filter(int == .05) %>% pull(error))
 
-w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
-                        intercept = .05,
-                        error = data_int %>% filter(int == .05) %>% pull(error), 
-                        cov = "within",
-                        title = "Effect size-level covariate type")
-
-w / b
 
 ggsave("sim_results/graphs_paper/study_2/type1_05_2.png", device = "png", 
-       dpi = 500, height = 8, width = 7)
+       dpi = 500, height = 5, width = 8)
 
 # Type 1 error ------------------------------------------------------------
 # 01
 
-b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
                    intercept = .01,
-                   error = data_int %>% filter(int == .01) %>% pull(error), 
-                   cov = "between",
-                   title = "Study-level covariate type")
-
-w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
-                        intercept = .01,
-                        error = data_int %>% filter(int == .01) %>% pull(error), 
-                        cov = "within",
-                        title = "Effect size-level covariate type")
-
-w / b
+                   error = data_int %>% filter(int == .01) %>% pull(error))
 
 ggsave("sim_results/graphs_paper/study_2/type1_01_2.png", device = "png", 
-       dpi = 500, height = 8, width = 7)
+       dpi = 500, height = 5, width = 8)
+
 # Type 1 error ------------------------------------------------------------
 # 10
 
-b <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), 
+create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), 
                    intercept = .10,
-                   error = data_int %>% filter(int == .10) %>% pull(error),
-                   cov = "between",
-                   title = "Study-level covariate type")
+                   error = data_int %>% filter(int == .10) %>% pull(error))
 
-w <- create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"), 
-                        intercept = .10,
-                        error = data_int %>% filter(int == .10) %>% pull(error),
-                        cov = "within",
-                        title = "Effect size-level covariate type")
-
-w / b
-
-ggsave("sim_results/graphs_paper/study_2/type1_10_2.png", device = "png", dpi = 500, height = 8, width = 7)
+ggsave("sim_results/graphs_paper/study_2/type1_10_2.png", device = "png", 
+       dpi = 500, height = 5, width = 7)
 
 
 # Power scatterplots ----------------------------------------------------------
@@ -263,7 +225,7 @@ power_scatter <- function(data, x, y) {
   data %>%
     mutate(cov_type = if_else(cov_type == "between", "Study-level", "Effect size-level")) %>%
   ggplot(aes_string(x, y, color = "m", shape = "m")) + 
-    geom_point(alpha = 0.5) + 
+    geom_point(alpha = .5, size = 2.2) + 
     geom_abline(slope = 1, intercept = 0) + 
     scale_x_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
     scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.2), expand = c(0,0)) + 
@@ -329,89 +291,74 @@ ggsave("sim_results/graphs_paper/study_2/power_05_scatter_cwbs_2.png", device = 
 
 # Type 1 error ------------------------------------------------------------
 
-create_type1_tau_graph <- function(dat, intercept, error, br, cov, title){
+create_type1_tau_graph <- function(dat, intercept, error){
   
   dat <- dat %>%
-    filter(test != "Naive-F")
+    filter(test != "Naive-F") %>%
+    mutate(cov_type = if_else(cov_type == "between", "Study-level",
+                              "Effect size-level"))
   
   dat %>%
-    filter(cov_type == cov) %>%
     mutate(tau = as.factor(tau)) %>%
-    ggplot(aes(x = test, y = rej_rate, color = tau)) + 
+    ggplot(aes(x = test, y = rej_rate, color = tau, shape = cov_type)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
-    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
+    geom_point(alpha = .5, size = 2.2, position = position_jitterdodge()) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_color_manual(values = c("plum2", "plum4")) +
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", color = expression(tau)) + 
-    ggtitle(title) + 
+    labs(x = "Method", y = "Type 1 Error Rate", color = expression(tau), shape = "") + 
     theme_bw() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10),
+          legend.title=element_text(size = 11), 
+          legend.text=element_text(size = 11))
 }
 
-b <- create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
+create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
                        intercept = .05, 
-                       error = data_int %>% filter(int == .05) %>% pull(error),
-                       cov = "between",
-                       title = "Study-level covariate type")
+                       error = data_int %>% filter(int == .05) %>% pull(error))
+
+
+ggsave("sim_results/graphs_paper/study_2/tau_052.png", device = "png", dpi = 500, height = 5, width = 8)
 
 
 
-w <- create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"), 
-                       intercept = .05, 
-                       error = data_int %>% filter(int == .05) %>% pull(error),
-                       cov = "within",
-                       title = "Effect size-level covariate type")
-
-w / b + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
-
-ggsave("sim_results/graphs_paper/study_2/tau_052.png", device = "png", dpi = 500, height = 8, width = 7)
-
-
-
-create_type1_rho_graph <- function(dat, intercept, error, br, cov, title){
+create_type1_rho_graph <- function(dat, intercept, error, br){
   
   dat <- dat %>%
-    filter(test != "Naive-F")
+    filter(test != "Naive-F")  %>%
+    mutate(cov_type = if_else(cov_type == "between", "Study-level",
+                                                            "Effect size-level"))
   
   dat %>%
-    filter(cov_type == cov) %>%
+    #filter(cov_type == cov) %>%
     mutate(rho = as.factor(rho)) %>%
-    ggplot(aes(x = test, y = rej_rate, color = rho)) + 
+    ggplot(aes(x = test, y = rej_rate, color = rho, shape = cov_type)) + 
     geom_hline(yintercept = intercept, linetype = "solid") + 
     geom_hline(yintercept = error, linetype = "dashed") + 
-    geom_jitter(alpha = .5, width = 0.1, height =  NULL) + 
+    geom_point(alpha = .5, size = 2.2, position = position_jitterdodge()) + 
     #scale_y_continuous(breaks = seq(0, .6, br)) + 
     scale_x_discrete(labels = function(x) lapply(strwrap(x, width = 10, simplify = FALSE), paste, collapse="\n")) + 
     scale_color_manual(values = c("firebrick2", "firebrick4")) +
     facet_grid(q ~ m) + 
-    labs(x = "Method", y = "Type 1 Error Rate", color = expression(rho)) + 
-    ggtitle(title) + 
+    labs(x = "Method", y = "Type 1 Error Rate", color = expression(rho), shape = "") + 
+    #ggtitle(title) + 
     theme_bw() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+          plot.caption=element_text(hjust = 0, size = 10),
+          legend.title=element_text(size = 11), 
+          legend.text=element_text(size = 11))
 }
 
-b <- create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
+create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        intercept = .05, 
                        error = data_int %>% filter(int == .05) %>% pull(error),
-                       br = .02, 
-                       cov = "between",
-                       title = "Study-level covariate type")
+                       br = .02)
 
 
-w <- create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
-                       intercept = .05, 
-                       error = data_int %>% filter(int == .05) %>% pull(error),
-                       br = .02, 
-                       cov = "within",
-                       title = "Effect size-level covariate type")
-
-w / b + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-
-ggsave("sim_results/graphs_paper/study_2/rho_052.png", device = "png", dpi = 500, height = 8, width = 7)
+ggsave("sim_results/graphs_paper/study_2/rho_052.png", device = "png", dpi = 500, height = 5, width = 8)
 
 
 
