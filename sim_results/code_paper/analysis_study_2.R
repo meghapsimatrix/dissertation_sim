@@ -78,7 +78,7 @@ naive_check <- naive_dat %>%
           legend.text=element_text(size = 11))
     
     
-ggsave("sim_results/graphs_paper/study_2/naivef_2.png", device = "png", dpi = 500, height = 5, width = 7)
+ggsave("sim_results/graphs_paper/study_2/naivef_2.png", device = "png", dpi = 500, height = 6, width = 7)
 
 
 
@@ -188,7 +188,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".05"),
 
 
 ggsave("sim_results/graphs_paper/study_2/type1_05_2.png", device = "png", 
-       dpi = 500, height = 5, width = 8)
+       dpi = 500, height = 6, width = 8)
 
 # Type 1 error ------------------------------------------------------------
 # 01
@@ -198,7 +198,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".01"),
                    error = data_int %>% filter(int == .01) %>% pull(error))
 
 ggsave("sim_results/graphs_paper/study_2/type1_01_2.png", device = "png", 
-       dpi = 500, height = 5, width = 8)
+       dpi = 500, height = 6, width = 8)
 
 # Type 1 error ------------------------------------------------------------
 # 10
@@ -208,7 +208,7 @@ create_type1_graph(dat = type1_dat %>% filter(alpha == ".10"),
                    error = data_int %>% filter(int == .10) %>% pull(error))
 
 ggsave("sim_results/graphs_paper/study_2/type1_10_2.png", device = "png", 
-       dpi = 500, height = 5, width = 7)
+       dpi = 500, height = 6, width = 7)
 
 
 # Power scatterplots ----------------------------------------------------------
@@ -321,7 +321,7 @@ create_type1_tau_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        error = data_int %>% filter(int == .05) %>% pull(error))
 
 
-ggsave("sim_results/graphs_paper/study_2/tau_052.png", device = "png", dpi = 500, height = 5, width = 8)
+ggsave("sim_results/graphs_paper/study_2/tau_052.png", device = "png", dpi = 500, height = 6, width = 8)
 
 
 
@@ -358,7 +358,7 @@ create_type1_rho_graph(dat = type1_dat %>% filter(alpha == ".05"),
                        br = .02)
 
 
-ggsave("sim_results/graphs_paper/study_2/rho_052.png", device = "png", dpi = 500, height = 5, width = 8)
+ggsave("sim_results/graphs_paper/study_2/rho_052.png", device = "png", dpi = 500, height = 6, width = 8)
 
 
 
